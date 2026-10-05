@@ -28,16 +28,29 @@ def _on_text() -> None:
         st.session_state["autofill_error"] = str(err)
 
 
+def _uploader_key() -> str:
+    return f"autofill_pdf_{st.session_state.get('autofill_pdf_nonce', 0)}"
+
+
 def _on_pdf() -> None:
-    upload = st.session_state.get("autofill_pdf")
+    upload = st.session_state.get(_uploader_key())
     if upload is None:
         return
+    data = upload.getvalue()
     try:
+        info = autofill.preflight_pdf(data)
         with st.spinner("Reading your CV..."):
-            draft = autofill.autofill_from_pdf(upload.getvalue())
+            draft = autofill.autofill_from_pdf(data)
         _apply(draft, overwrite=bool(st.session_state.get("autofill_overwrite")))
+        if info.has_text is False:
+            st.session_state["autofill_flash"] += (
+                " This PDF looks scanned (no text layer), so results may be limited."
+            )
     except autofill.AutofillError as err:
         st.session_state["autofill_error"] = str(err)
+    finally:
+        # Drop the uploaded file from the page: a new nonce gives a fresh, empty uploader.
+        st.session_state["autofill_pdf_nonce"] = st.session_state.get("autofill_pdf_nonce", 0) + 1
 
 
 def render_autofill_panel() -> None:
@@ -51,7 +64,8 @@ def render_autofill_panel() -> None:
         st.caption(
             "Paste a bio, CV text or a LinkedIn/Scholar 'about', or upload a PDF CV. "
             "Gemini drafts the form; you review and edit before saving. "
-            "Text is sent to Google's Gemini API and PDFs are not stored by Findings."
+            "Text is sent to Google's Gemini API and PDFs are not stored by Findings. "
+            "Scanned PDFs without text may give limited results."
         )
         st.checkbox(
             "Overwrite fields I have already filled",
@@ -63,5 +77,5 @@ def render_autofill_panel() -> None:
             st.text_area("Bio or CV text", key="autofill_text", height=160, max_chars=20000)
             st.button("Autofill from text", key="autofill_text_btn", on_click=_on_text)
         with tab_pdf:
-            st.file_uploader("CV (PDF, up to 5 MB, 10 pages)", type=["pdf"], key="autofill_pdf")
+            st.file_uploader("CV (PDF, up to 5 MB, 10 pages)", type=["pdf"], key=_uploader_key())
             st.button("Autofill from PDF", key="autofill_pdf_btn", on_click=_on_pdf)

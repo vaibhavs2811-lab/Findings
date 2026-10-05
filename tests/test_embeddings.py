@@ -106,9 +106,12 @@ def test_embed_profile_calls_sdk_and_normalizes():
     mock_client = MagicMock()
     # Provide unnormalized vector of length 768
     raw_values = [2.0] * EMBEDDING_DIM
-    mock_response = MagicMock()
-    mock_response.embedding.values = raw_values
-    mock_client.models.embed_content.return_value = mock_response
+    # Real SDK response type: embed_content returns EmbedContentResponse(embeddings=[...]).
+    from google.genai import types
+
+    mock_client.models.embed_content.return_value = types.EmbedContentResponse(
+        embeddings=[types.ContentEmbedding(values=raw_values)]
+    )
 
     vec = embed_profile("Test text", client=mock_client)
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 
 import pytest
+from streamlit.testing.v1 import AppTest
 
 from findings.ai.autofill_prompt import ProfileDraft, build_text_prompt
 from findings.ai.client import AIUnavailable
@@ -130,3 +131,62 @@ def test_panel_fills_form_without_saving(monkeypatch):
     assert at.session_state["f_stage"] == "Master's"
     assert at.session_state["f_seeking"] is True
     assert not sb.row.get("full_name")  # nothing saved until the user clicks Save
+
+
+# ---------------------------------------------------------------------------
+# Sample CV, scanned-PDF detection and uploader reset
+# ---------------------------------------------------------------------------
+
+SAMPLE = __import__("pathlib").Path(__file__).resolve().parent.parent / "data" / "sample_cv.pdf"
+
+
+def test_sample_cv_passes_preflight_with_text_layer():
+    info = autofill.preflight_pdf(SAMPLE.read_bytes())
+    assert info.pages == 1
+    assert info.has_text is True
+
+
+def test_blank_pdf_is_flagged_as_scanned():
+    from pypdf import PdfWriter
+
+    buf = io.BytesIO()
+    w = PdfWriter()
+    w.add_blank_page(width=200, height=200)
+    w.write(buf)
+    assert autofill.preflight_pdf(buf.getvalue()).has_text is False
+
+
+def _pdf_host():
+    """Host script: no real uploader widget, so a stand-in upload can sit under its key."""
+    from pathlib import Path
+
+    import streamlit as st
+
+    from ui import autofill_panel
+
+    class Upload:
+        def getvalue(self):
+            return (Path.cwd() / "data" / "sample_cv.pdf").read_bytes()
+
+    st.session_state.setdefault("autofill_pdf_0", Upload())
+    st.button("go", key="go", on_click=autofill_panel._on_pdf)
+
+
+def test_pdf_autofill_fills_form_clears_uploader_and_never_saves(monkeypatch):
+    seen = {}
+
+    def fake(prompt, schema, **kw):
+        seen["parts"] = kw.get("parts")
+        return ProfileDraft(full_name="Dr. Priya Raman", career_stage="Postdoc", interests=["Housing"])
+
+    monkeypatch.setattr(autofill, "generate_structured", fake)
+    at = AppTest.from_function(_pdf_host, default_timeout=20)
+    at.run()
+    at.button(key="go").click().run()
+    assert not at.exception
+    assert at.session_state["f_name"] == "Dr. Priya Raman"
+    assert at.session_state["f_stage"] == "Postdoc"
+    assert at.session_state["f_open"] is True and at.session_state["f_seeking"] is False
+    assert at.session_state["autofill_pdf_nonce"] == 1  # uploader reset so the file is dropped
+    assert seen["parts"]  # PDF went to Gemini inline
+    assert "Filled" in at.session_state["autofill_flash"]

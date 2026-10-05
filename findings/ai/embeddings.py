@@ -129,7 +129,10 @@ def embed_profile(text: str, *, client: Any = None) -> list[float]:
             contents=text,
             config=cfg,
         )
-        values = res.embedding.values
+        embeds = getattr(res, "embeddings", None)
+        if not embeds:
+            raise ValueError("Empty embeddings response")
+        values = embeds[0].values
         if len(values) != EMBEDDING_DIM:
             raise ValueError(f"Expected {EMBEDDING_DIM} dimensions, got {len(values)}")
         return normalize_vector(values)

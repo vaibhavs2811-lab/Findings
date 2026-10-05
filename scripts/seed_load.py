@@ -160,19 +160,20 @@ def main() -> int:
     profiles = data.get("profiles", [])
     logger.info("Loaded %d profiles from %s", len(profiles), SEED_PROFILES_FILE)
 
-    # Configure Gemini if possible
+    # Resolve the Gemini key (env var, ~/.streamlit/secrets.toml, scripts/local.toml).
+    # Never fall back to mock vectors unless --offline was requested explicitly.
     use_gemini = False
     if not args.offline:
-        try:
-            settings = load_local_settings(str(ROOT / ".streamlit" / "secrets.toml"))
-            if settings.gemini_api_key:
-                configure(settings.gemini_api_key)
-                use_gemini = True
-                logger.info("Configured Gemini for live embedding generation")
-        except Exception:
-            pass
+        from scripts.check_gemini import find_api_key
 
-    if not use_gemini:
+        api_key = find_api_key()
+        if not api_key:
+            logger.error("No Gemini API key found. Set GEMINI_API_KEY or pass --offline for mock vectors.")
+            return 1
+        configure(api_key)
+        use_gemini = True
+        logger.info("Configured Gemini for live embedding generation")
+    else:
         logger.info("Running embedding generation in deterministic offline mock mode")
 
     cache = load_embeddings_cache()
@@ -192,8 +193,9 @@ def main() -> int:
                     vec = embed_profile(text)
                     time.sleep(1.0)  # Pacing for rate limits
                 except AIUnavailable as exc:
-                    logger.warning("Gemini unavailable (%s), using mock vector for %s", exc, sid)
-                    vec = mock_embedding(text)
+                    save_embeddings_cache(cache)
+                    logger.error("Gemini embedding failed for %s (%s). Progress saved; re-run to resume.", sid, exc)
+                    return 1
             else:
                 vec = mock_embedding(text)
 

@@ -38,6 +38,7 @@ class AutofillError(Exception):
 class PdfInfo:
     pages: int | None
     size: int
+    has_text: bool | None = None  # None when unknown (pypdf missing)
 
 
 def _scrub(text: str | None, limit: int) -> str:
@@ -134,13 +135,14 @@ def preflight_pdf(data: bytes) -> PdfInfo:
         if reader.is_encrypted:
             raise AutofillError("That PDF is password protected. Remove the password or paste the text.")
         pages = len(reader.pages)
+        has_text = any((page.extract_text() or "").strip() for page in reader.pages[:MAX_PDF_PAGES])
     except AutofillError:
         raise
     except Exception:
         raise AutofillError("Could not read that PDF. Try another file or paste the text.") from None
     if pages > MAX_PDF_PAGES:
         raise AutofillError(f"That PDF has {pages} pages; the limit is {MAX_PDF_PAGES}.")
-    return PdfInfo(pages=pages, size=size)
+    return PdfInfo(pages=pages, size=size, has_text=has_text)
 
 
 def autofill_from_pdf(data: bytes) -> dict[str, Any]:
