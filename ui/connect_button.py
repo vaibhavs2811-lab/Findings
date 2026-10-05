@@ -118,7 +118,14 @@ def connect_button(
                 st.caption("They sent you a request · answer it on your Connections page")
         return
 
-    st.button("Connect", key=f"connect_{key}", on_click=_open, args=(key,))
+    st.button(
+        "Connect",
+        key=f"connect_{key}",
+        on_click=_open,
+        args=(key,),
+        type="primary",
+        icon=":material/person_add:",
+    )
 
     if st.session_state.get("connect_dialog") == key:
         _request_dialog(sb, user_id, profile_id, key, name, is_synthetic)

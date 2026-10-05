@@ -65,3 +65,17 @@ on the demo machine before the demo and paste their output below.
 
 Screenshots are captured by hand during the rehearsal (see `docs/RUNBOOK.md` section 7) and must
 not show keys, passwords or real email addresses.
+
+## UI screenshots (design preview)
+
+Captured on a phone-width viewport from the design preview (`streamlit run preview.py`), which runs
+the real app on sample data, so no real accounts or emails appear. They show the dark-first design;
+replace or add real-account captures from the deployed app during the rehearsal.
+
+| Page | File |
+|---|---|
+| Home | `docs/screenshots/ui-home.jpg` |
+| My Matches | `docs/screenshots/ui-my-matches.jpg` |
+| Discover | `docs/screenshots/ui-discover.jpg` |
+| My profile | `docs/screenshots/ui-profile.jpg` |
+| Connections | `docs/screenshots/ui-connections.jpg` |
