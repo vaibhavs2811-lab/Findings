@@ -5,6 +5,14 @@ status: passed
 score: 6/6 must-haves verified
 covered_files:
   - ".github/workflows/keepalive.yml"
+  - ".planning/phases/01-foundation-sign-in/01-01-PLAN.md"
+  - ".planning/phases/01-foundation-sign-in/01-01-SUMMARY.md"
+  - ".planning/phases/01-foundation-sign-in/01-02-PLAN.md"
+  - ".planning/phases/01-foundation-sign-in/01-02-SUMMARY.md"
+  - ".planning/phases/01-foundation-sign-in/01-03-PLAN.md"
+  - ".planning/phases/01-foundation-sign-in/01-03-SUMMARY.md"
+  - ".planning/phases/01-foundation-sign-in/01-04-PLAN.md"
+  - ".planning/phases/01-foundation-sign-in/01-04-SUMMARY.md"
   - "app.py"
   - "findings/core/config.py"
   - "findings/core/cookies.py"
@@ -19,7 +27,7 @@ covered_files:
   - "views/account.py"
   - "views/home.py"
   - "views/login.py"
-covered_digest: "v2:sha256:b1ac85dca3e61c382fc8418f2f519741f70bd21f335e4dcc599e9e5c0a3221ee"
+covered_digest: "v2:sha256:a97c85a0c08a0799c9182399629fb4764d4328538c46725d560c0ec5a818dd3b"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
