@@ -16,6 +16,7 @@ class ConfigError(Exception):
 class Settings:
     supabase_url: str
     supabase_publishable_key: str
+    gemini_api_key: str | None = None
 
 
 def load_settings(source: Mapping) -> Settings:
@@ -32,7 +33,15 @@ def load_settings(source: Mapping) -> Settings:
             "SUPABASE_PUBLISHABLE_KEY must be a publishable key starting with "
             "sb_publishable_. Secret and service_role keys are never allowed in the app."
         )
-    return Settings(supabase_url=url, supabase_publishable_key=key)
+    raw_gemini = source.get("GEMINI_API_KEY")
+    gemini_key = str(raw_gemini).strip() if raw_gemini is not None else None
+    if not gemini_key:
+        gemini_key = None
+    return Settings(
+        supabase_url=url,
+        supabase_publishable_key=key,
+        gemini_api_key=gemini_key,
+    )
 
 
 def load_local_settings(path: str = ".streamlit/secrets.toml") -> Settings:

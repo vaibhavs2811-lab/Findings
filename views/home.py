@@ -12,9 +12,12 @@ try:
 except Exception:
     st.warning("Could not load your profile record. Try again in a moment.")
 else:
-    if profile is None:
-        st.info("No profile record yet.")
+    if profile is None or not profile.get("is_complete"):
+        st.info(
+            "Your profile is not complete yet. Add your name, career stage and at least "
+            "one research interest so other researchers can find you."
+        )
+        st.page_link("views/profile.py", label="Complete your profile")
     else:
-        created = str(profile.get("created_at") or "")[:10]
-        state = "complete" if profile.get("is_complete") else "not complete yet"
-        st.success(f"Profile record found (created {created}). Profile is {state}.")
+        st.success("Your profile is complete.")
+        st.page_link("views/profile.py", label="View my profile")

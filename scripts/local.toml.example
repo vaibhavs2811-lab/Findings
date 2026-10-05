@@ -1,5 +1,18 @@
 # Copy to scripts/local.toml and fill in real values.
 # scripts/local.toml is gitignored. Never commit it and never paste it into
-# Streamlit Cloud secrets. It is read only by scripts/check_live.py.
+# Streamlit Cloud secrets. It is read only by scripts/check_live.py and scripts/check_gemini.py.
 DEMO_EMAIL = "demo@example.com"
 DEMO_PASSWORD = "change-me-not-a-real-password"
+
+# Second confirmed account used only by the RLS probe in scripts/check_live.py;
+# create it in Supabase Dashboard -> Authentication -> Users -> Add user with Auto Confirm.
+PROBE_EMAIL = "probe@example.com"
+PROBE_PASSWORD = "change-me-probe-password"
+
+# Optional Gemini API key for scripts/check_gemini.py (also reads global ~/.streamlit/secrets.toml)
+# GEMINI_API_KEY = "REPLACE_ME"
+
+# Supabase secret key (service_role) used ONLY by scripts/reset_connections.py and scripts/seed_load.py.
+# Never commit this key and NEVER put it into Streamlit Cloud secrets.
+# Find it in Supabase Dashboard -> Project Settings -> API Keys -> secret keys.
+SUPABASE_SECRET_KEY = "paste-your-secret-key-here"

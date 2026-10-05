@@ -291,3 +291,294 @@ $$;
 
 revoke execute on function public.get_contact_email(uuid) from public, anon;
 grant execute on function public.get_contact_email(uuid) to authenticated;
+
+-- 10. Phase 2: methods suggestion bookkeeping (additive, nullable). Must stay after section 8, which re-runs revoke update + grant update on profiles.
+alter table public.profiles add column if not exists methods_hash text;
+alter table public.profiles add column if not exists methods_reason text check (char_length(methods_reason) <= 300);
+grant update (methods_hash, methods_reason) on public.profiles to authenticated;
+notify pgrst, 'reload schema';
+
+-- 11. Phase 4: AI Peer Matching - pgvector shortlist RPC ----------------------------
+drop function if exists public.match_profiles(extensions.vector, integer, uuid[], text);
+create or replace function public.match_profiles(
+  query_embedding extensions.vector(768) default null,
+  match_count int default 15,
+  exclude_ids uuid[] default '{}',
+  mode text default 'peer'
+)
+returns table (
+  id uuid,
+  full_name text,
+  career_stage text,
+  stage_tier text,
+  methods_effective text,
+  interests text[],
+  skills text[],
+  experience text,
+  bio text,
+  looking_for text,
+  offers text[],
+  needs text[],
+  contributable_skills text[],
+  want_to_learn text[],
+  seeking_mentor boolean,
+  open_to_mentoring boolean,
+  is_synthetic boolean,
+  similarity double precision
+)
+language sql
+stable
+security invoker
+set search_path = public, extensions
+as $$
+  with caller_vec as (
+    select coalesce(
+      match_profiles.query_embedding,
+      (select p.embedding from public.profiles p where p.id = (select auth.uid()))
+    ) as vec
+  )
+  select
+    p.id,
+    p.full_name,
+    p.career_stage,
+    p.stage_tier,
+    p.methods_effective,
+    p.interests,
+    p.skills,
+    p.experience,
+    p.bio,
+    p.looking_for,
+    p.offers,
+    p.needs,
+    p.contributable_skills,
+    p.want_to_learn,
+    p.seeking_mentor,
+    p.open_to_mentoring,
+    p.is_synthetic,
+    (1 - (p.embedding <=> cv.vec)) as similarity
+  from public.profiles p
+  cross join caller_vec cv
+  where match_profiles.mode = 'peer'
+    and cv.vec is not null
+    and p.id <> (select auth.uid())
+    and p.is_complete
+    and p.embedding is not null
+    and not (p.id = any(coalesce(match_profiles.exclude_ids, '{}'::uuid[])))
+    and not exists (
+      select 1
+      from public.connections c
+      where (c.requester_id = (select auth.uid()) and c.recipient_id = p.id)
+         or (c.recipient_id = (select auth.uid()) and c.requester_id = p.id)
+    )
+  order by p.embedding <=> cv.vec asc
+  limit least(greatest(match_profiles.match_count, 1), 50);
+$$;
+
+revoke execute on function public.match_profiles(extensions.vector, integer, uuid[], text) from public, anon;
+grant execute on function public.match_profiles(extensions.vector, integer, uuid[], text) to authenticated;
+
+-- Phase 6 replaces this function in its own appended section with the same signature and columns.
+notify pgrst, 'reload schema';
+
+-- 10. Phase 5: connections (auto-accept, insert columns, my_connections) -------
+
+-- (a) D-02: Column-level insert permissions (clients cannot insert status or timestamps)
+revoke insert on public.connections from authenticated;
+grant insert (requester_id, recipient_id, note) on public.connections to authenticated;
+
+-- (b) D-01: Auto-accept trigger for synthetic profiles
+create or replace function public.auto_accept_synthetic()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if exists (
+    select 1
+    from public.profiles
+    where id = new.recipient_id
+      and is_synthetic = true
+  ) then
+    update public.connections
+    set status = 'accepted'
+    where id = new.id
+      and status = 'pending';
+  end if;
+  return null;
+end;
+$$;
+
+revoke execute on function public.auto_accept_synthetic() from public, anon, authenticated;
+
+drop trigger if exists auto_accept_synthetic on public.connections;
+create trigger auto_accept_synthetic
+  after insert on public.connections
+  for each row execute function public.auto_accept_synthetic();
+
+-- (c) D-03: my_connections security-definer RPC with gated email via get_contact_email
+create or replace function public.my_connections()
+returns table (
+  connection_id uuid,
+  direction text,
+  status text,
+  note text,
+  created_at timestamptz,
+  responded_at timestamptz,
+  other_id uuid,
+  other_name text,
+  other_stage text,
+  other_is_synthetic boolean,
+  other_email text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    c.id as connection_id,
+    case
+      when c.requester_id = (select auth.uid()) then 'sent'
+      else 'received'
+    end as direction,
+    c.status,
+    c.note,
+    c.created_at,
+    c.responded_at,
+    o.id as other_id,
+    coalesce(nullif(o.full_name, ''), 'Unnamed researcher') as other_name,
+    o.career_stage as other_stage,
+    o.is_synthetic as other_is_synthetic,
+    case
+      when c.status = 'accepted' then public.get_contact_email(o.id)
+      else null
+    end as other_email
+  from public.connections c
+  join public.profiles o on o.id = (
+    case
+      when c.requester_id = (select auth.uid()) then c.recipient_id
+      else c.requester_id
+    end
+  )
+  where c.requester_id = (select auth.uid())
+     or c.recipient_id = (select auth.uid())
+  order by c.created_at desc;
+$$;
+
+revoke execute on function public.my_connections() from public, anon;
+grant execute on function public.my_connections() to authenticated;
+
+notify pgrst, 'reload schema';
+
+
+-- Phase 6: mentorship mode (MENT-01..04). Appended; earlier sections are untouched.
+
+alter table public.match_cache drop constraint if exists match_cache_mode_check;
+alter table public.match_cache add constraint match_cache_mode_check check (mode in ('peer','mentor','mentee'));
+
+create or replace function public.stage_rank(stage text)
+returns int
+language sql
+immutable
+set search_path = ''
+as $$
+  select case stage
+    when 'Undergrad' then 1
+    when 'Master''s' then 2
+    when 'PhD' then 3
+    when 'Postdoc' then 4
+    when 'Industry researcher' then 4
+    when 'Faculty' then 5
+    else null
+  end;
+$$;
+
+drop function if exists public.match_mentorship(int, uuid[], text);
+
+create or replace function public.match_mentorship(
+  match_count int default 40,
+  exclude_ids uuid[] default '{}',
+  mode text default 'mentor'
+)
+returns table (
+  id uuid,
+  full_name text,
+  career_stage text,
+  stage_tier text,
+  methods_effective text,
+  interests text[],
+  skills text[],
+  experience text,
+  bio text,
+  looking_for text,
+  offers text[],
+  needs text[],
+  contributable_skills text[],
+  want_to_learn text[],
+  seeking_mentor boolean,
+  open_to_mentoring boolean,
+  is_synthetic boolean,
+  similarity double precision
+)
+language sql
+stable
+security invoker
+set search_path = public, extensions
+as $$
+  with me as (
+    select
+      p.embedding as vec,
+      public.stage_rank(p.career_stage) as rank
+    from public.profiles p
+    where p.id = (select auth.uid())
+  )
+  select
+    p.id,
+    p.full_name,
+    p.career_stage,
+    p.stage_tier,
+    p.methods_effective,
+    p.interests,
+    p.skills,
+    p.experience,
+    p.bio,
+    p.looking_for,
+    p.offers,
+    p.needs,
+    p.contributable_skills,
+    p.want_to_learn,
+    p.seeking_mentor,
+    p.open_to_mentoring,
+    p.is_synthetic,
+    (1 - (p.embedding <=> me.vec)) as similarity
+  from public.profiles p
+  cross join me
+  where me.vec is not null
+    and me.rank is not null
+    and p.id <> (select auth.uid())
+    and p.is_complete
+    and p.embedding is not null
+    and not (p.id = any(coalesce(match_mentorship.exclude_ids, '{}'::uuid[])))
+    and not exists (
+      select 1
+      from public.connections c
+      where (c.requester_id = (select auth.uid()) and c.recipient_id = p.id)
+         or (c.recipient_id = (select auth.uid()) and c.requester_id = p.id)
+    )
+    and (
+      (match_mentorship.mode = 'mentor' and p.open_to_mentoring and public.stage_rank(p.career_stage) > me.rank)
+      or
+      (match_mentorship.mode = 'mentee' and p.seeking_mentor and public.stage_rank(p.career_stage) < me.rank)
+    )
+  order by p.embedding <=> me.vec asc
+  limit least(greatest(coalesce(match_mentorship.match_count, 15), 1), 50);
+$$;
+
+revoke execute on function public.match_mentorship(int, uuid[], text) from public, anon;
+grant execute on function public.match_mentorship(int, uuid[], text) to authenticated;
+
+notify pgrst, 'reload schema';
+
+
+

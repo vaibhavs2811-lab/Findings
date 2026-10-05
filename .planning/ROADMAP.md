@@ -27,8 +27,8 @@ The last phase turns the screenshots collected in each phase into the rubric doc
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Sign-in** - Live app on Streamlit Cloud with OTP and demo-password sign-in, on the full schema, RLS, SMTP and keep-alive (completed 2026-10-05)
-- [ ] **Phase 2: Researcher Profiles** - Researchers create and edit their own profile: career stage, mentoring toggles, give/need fields and an AI-suggested methods badge
-- [ ] **Phase 3: Researcher Pool & Discover** - 60-100 labelled synthetic researchers seeded with embeddings; browse, filter, search and skip cards; open profile pages
+- [x] **Phase 2: Researcher Profiles** - Researchers create and edit their own profile: career stage, mentoring toggles, give/need fields and an AI-suggested methods badge (completed 2026-10-05)
+- [x] **Phase 3: Researcher Pool & Discover** - 60-100 labelled synthetic researchers seeded with embeddings; browse, filter, search and skip cards; open profile pages (completed 2026-10-05)
 - [ ] **Phase 4: AI Peer Matching** - "My Matches": pgvector shortlist plus a Gemini rerank with grounded explanations, cached, with an embedding-only fallback
 - [ ] **Phase 5: Connections & Email Unlock** - Send, accept or decline requests from anywhere; contact email is revealed only after accept, enforced in the database
 - [ ] **Phase 6: Mentorship Mode** - Find a mentor or a mentee, ranked on two-way give/need fit, with both sides of the exchange explained
@@ -103,9 +103,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Tracer + complete My profile form, read-only view and Home CTA (PROF-01..04) [wave 1]
-- [ ] 02-02-PLAN.md — Shared streamlit-free Gemini client, methods classifier, schema section, live smoke script (PROF-05) [wave 1]
-- [ ] 02-03-PLAN.md — [BLOCKING] schema/key/probe setup, hash-gated methods badge + override, live RLS probe (PROF-05, PROF-06) [wave 2]
+- [x] 02-01-PLAN.md — Tracer + complete My profile form, read-only view and Home CTA (PROF-01..04) [wave 1]
+- [x] 02-02-PLAN.md — Shared streamlit-free Gemini client, methods classifier, schema section, live smoke script (PROF-05) [wave 1]
+- [x] 02-03-PLAN.md — [BLOCKING] schema/key/probe setup, hash-gated methods badge + override, live RLS probe (PROF-05, PROF-06) [wave 2]
 **UI hint**: yes
 
 ### Phase 3: Researcher Pool & Discover
@@ -131,7 +131,12 @@ Plans:
 - **Fallback demo:** Discover is the fallback demo path if matching breaks.
 
 **Docs capture**: Discover grid with Synthetic labels, each filter applied, keyword search, Skip, profile page with no email shown, seed diversity stats
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 03-01-PLAN.md — Discover UI, card badges, filtering, search, session skip, and public profile view (DISC-01..05, PROF-07, DATA-03 UI) [wave 1]
+- [x] 03-02-PLAN.md — Synthetic researcher generator & dataset (DATA-01) [wave 2]
+- [x] 03-03-PLAN.md — Embedding builder & seed loader (DATA-02, DATA-03 backend) [wave 2]
 **UI hint**: yes
 
 ### Phase 4: AI Peer Matching
@@ -172,8 +177,12 @@ Plans:
   - Spot-check for hallucinations.
   - Build an anchor-profile evaluation set (hand-checked top 3) for the test report.
 
-**Docs capture**: My Matches list with explanations, Refresh, cached reload, forced-fallback notice, anchor-profile top-3 evaluation
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 04-01-PLAN.md — Base AI Peer Matching Tracer & Embedding-on-Save (MATCH-01 base, MATCH-02) [wave 1]
+- [x] 04-02-PLAN.md — Structured Gemini Rerank & Grounded Explanations (MATCH-01, MATCH-03, MATCH-05) [wave 2]
+- [x] 04-03-PLAN.md — Match Caching, Connections Invalidation, 4-Rung Fallback Ladder & Evaluation (MATCH-01, MATCH-04, MATCH-05) [wave 3]
 **UI hint**: yes
 
 ### Phase 5: Connections & Email Unlock
@@ -195,8 +204,12 @@ Plans:
 - **Declines are final:** the unique-pair index makes a decline permanent. Record this in the limitations document.
 - **Phase gate:** a two-browser, two-account test of request, accept and email unlock.
 
-**Docs capture**: request dialog with note, duplicate-blocked message, incoming request accept/decline, email hidden before / visible after, synthetic auto-accept, Connections page tabs
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 05-01-PLAN.md — Connections Tracer, Schema Rules, Gated Email Unlock & Reset Probe (CONN-01..06) [wave 1]
+- [x] 05-02-PLAN.md — Connect on Discover Cards & My Matches with Connection Filtering (DISC-06, CONN-01, CONN-06) [wave 2]
+- [x] 05-03-PLAN.md — Phase 5 Polish: D-14 Incomplete Profile Guard & D-07 Reverse Request Acceptance (CONN-01, CONN-03, CONN-06) [wave 3]
 **UI hint**: yes
 
 ### Phase 6: Mentorship Mode

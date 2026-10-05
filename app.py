@@ -2,6 +2,7 @@ import platform
 
 import streamlit as st
 
+from findings.ai.client import configure
 from findings.core import cookies, session
 from findings.core.config import ConfigError, load_settings
 
@@ -16,6 +17,8 @@ except (ConfigError, FileNotFoundError, KeyError, st.errors.StreamlitSecretNotFo
     )
     st.stop()
 
+configure(settings.gemini_api_key)
+
 session.get_client(settings)
 session.refresh_if_needed()
 token = cookies.sync(session.cookie_value(), clear=st.session_state.pop("clear_cookie", False))
@@ -26,7 +29,12 @@ user = session.current_user()
 if user:
     pages = [
         st.Page("views/home.py", title="Home", default=True),
+        st.Page("views/profile.py", title="My profile"),
+        st.Page("views/discover.py", title="Discover", icon=":material/travel_explore:"),
+        st.Page("views/matches.py", title="My Matches", icon=":material/handshake:"),
+        st.Page("views/connections.py", title="Connections", icon=":material/group:"),
         st.Page("views/account.py", title="Account"),
+        st.Page("views/researcher.py", title="Researcher profile", visibility="hidden"),
     ]
 else:
     pages = [st.Page("views/login.py", title="Sign in", default=True)]

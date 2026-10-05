@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from findings.repos.profiles import PROFILE_SUMMARY_COLUMNS, get_own_profile
+from findings.repos.profiles import PROFILE_COLUMNS, get_own_profile
 from findings.services import auth_service
 from findings.services.auth_service import AuthFailure
 from tests.fakes import FakeSupabase
@@ -78,29 +78,41 @@ def test_get_own_profile_selects_explicit_columns_filtered_by_id():
     sb = ProfileFake(rows=[row])
     assert get_own_profile(sb, "user-1") == row
     assert ("table", "profiles") in sb.log
-    assert ("select", PROFILE_SUMMARY_COLUMNS) in sb.log
+    assert ("select", PROFILE_COLUMNS) in sb.log
     assert ("eq", ("id", "user-1")) in sb.log
-    assert "embedding" not in PROFILE_SUMMARY_COLUMNS
-    assert "*" not in PROFILE_SUMMARY_COLUMNS
+    assert "embedding" not in PROFILE_COLUMNS
+    assert "*" not in PROFILE_COLUMNS
 
 
 def test_get_own_profile_returns_none_when_no_row():
     assert get_own_profile(ProfileFake(rows=[]), "user-1") is None
 
 
-def test_home_shows_profile_record_found():
+def test_home_incomplete_shows_cta_link():
     row = {"id": "user-1", "is_complete": False, "created_at": "2026-10-05T10:00:00+00:00"}
     at = _home(ProfileFake(rows=[row]))
     assert not at.exception
-    assert "Profile record found" in at.success[0].value
-    assert "2026-10-05" in at.success[0].value
+    assert "Your profile is not complete yet" in at.info[0].value
+    links = at.get("page_link")
+    assert any(getattr(link, "label", getattr(link.proto, "label", "")) == "Complete your profile" for link in links)
 
 
-def test_home_without_row_is_calm_info():
+def test_home_without_row_shows_cta_link():
     at = _home(ProfileFake(rows=[]))
     assert not at.exception
     assert not at.error
-    assert at.info[0].value == "No profile record yet."
+    assert "Your profile is not complete yet" in at.info[0].value
+    links = at.get("page_link")
+    assert any(getattr(link, "label", getattr(link.proto, "label", "")) == "Complete your profile" for link in links)
+
+
+def test_home_complete_shows_success_and_view_link():
+    row = {"id": "user-1", "is_complete": True, "created_at": "2026-10-05T10:00:00+00:00"}
+    at = _home(ProfileFake(rows=[row]))
+    assert not at.exception
+    assert "Your profile is complete." in at.success[0].value
+    links = at.get("page_link")
+    assert any(getattr(link, "label", getattr(link.proto, "label", "")) == "View my profile" for link in links)
 
 
 def test_home_hides_raw_database_errors():
