@@ -1,3 +1,5 @@
+import platform
+
 import streamlit as st
 
 from findings.core import cookies, session
@@ -28,6 +30,9 @@ else:
     pages = [st.Page("views/login.py", title="Sign in", default=True)]
 
 nav = st.navigation(pages)
+
+with st.sidebar:
+    st.caption(f"Findings · Python {platform.python_version()}")
 
 if user:
     with st.sidebar:

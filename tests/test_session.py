@@ -35,7 +35,9 @@ def test_home_sidebar_shows_email_and_sign_out():
     at.run()
     assert not at.exception
     assert at.title[0].value == "Welcome to Findings"
-    assert at.sidebar.caption[0].value == "me@b.com"
+    captions = [c.value for c in at.sidebar.caption]
+    assert "me@b.com" in captions
+    assert any(c.startswith("Findings") and "Python 3." in c for c in captions)
     assert _sidebar_button(at)
 
 
