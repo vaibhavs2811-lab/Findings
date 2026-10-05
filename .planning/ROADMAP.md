@@ -39,12 +39,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### Phase 1: Foundation & Sign-in
 
-**Goal**: A researcher can open the live Findings app on Streamlit Cloud, sign in with an emailed 6-digit code or the demo password, stay signed in across refreshes, and sign out
+**Goal**: A researcher can open the live Findings app on Streamlit Cloud, sign in with email + password (or the demo account), stay signed in across refreshes, and sign out
 **Mode:** mvp
 **Depends on**: Nothing (first phase)
 **Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, OPS-01, OPS-02, OPS-03
 **Success Criteria** (what must be TRUE):
-  1. On the deployed Streamlit Cloud URL, someone with an email outside the Supabase team receives a 6-digit code and signs in by typing it. This works for a brand-new address (account created automatically) and for a returning one.
+  1. On the deployed Streamlit Cloud URL, someone with an email outside the Supabase team creates an account with email + password and is signed in straight away; a returning user signs in with the same email + password (changed from emailed code by user decision 2026-10-05).
   2. The demo account signs in with email + password on the deployed app, without using an inbox.
   3. A signed-in user is still signed in after a browser refresh and can sign out from any page.
   4. Two people signed in at the same time in two separate browsers each see only their own account and data, never the other's.
