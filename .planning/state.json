@@ -1,0 +1,53 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": null,
+  "phases": [
+    {
+      "number": "1",
+      "name": "Foundation & Sign-in",
+      "status": "complete"
+    },
+    {
+      "number": "2",
+      "name": "Researcher Profiles",
+      "status": "pending"
+    },
+    {
+      "number": "3",
+      "name": "Researcher Pool & Discover",
+      "status": "pending"
+    },
+    {
+      "number": "4",
+      "name": "AI Peer Matching",
+      "status": "pending"
+    },
+    {
+      "number": "5",
+      "name": "Connections & Email Unlock",
+      "status": "pending"
+    },
+    {
+      "number": "6",
+      "name": "Mentorship Mode",
+      "status": "pending"
+    },
+    {
+      "number": "7",
+      "name": "AI Profile Autofill",
+      "status": "pending"
+    },
+    {
+      "number": "8",
+      "name": "Docs & Demo Readiness",
+      "status": "pending"
+    }
+  ],
+  "next": {
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step (plan phase 2)",
+    "reason": "Phase 2 of 8 — needs a plan"
+  },
+  "updated_at": "2026-10-05T04:03:14.909Z"
+}
