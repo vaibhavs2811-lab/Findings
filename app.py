@@ -1,6 +1,6 @@
 import streamlit as st
 
-from findings.core import session
+from findings.core import cookies, session
 from findings.core.config import ConfigError, load_settings
 
 st.set_page_config(page_title="Findings")
@@ -15,10 +15,24 @@ except (ConfigError, FileNotFoundError, KeyError, st.errors.StreamlitSecretNotFo
     st.stop()
 
 session.get_client(settings)
+session.restore_once()
+session.refresh_if_needed()
 
-if session.current_user():
-    pages = [st.Page("views/home.py", title="Home", default=True)]
+user = session.current_user()
+if user:
+    pages = [
+        st.Page("views/home.py", title="Home", default=True),
+        st.Page("views/account.py", title="Account"),
+    ]
 else:
     pages = [st.Page("views/login.py", title="Sign in", default=True)]
 
-st.navigation(pages).run()
+nav = st.navigation(pages)
+
+if user:
+    with st.sidebar:
+        st.caption(user["email"])
+        st.button("Sign out", key="sidebar_sign_out", on_click=session.sign_out)
+
+cookies.sync_cookie(session.cookie_value())
+nav.run()
