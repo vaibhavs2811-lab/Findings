@@ -16,6 +16,12 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from findings.core.config import load_local_settings
+from findings.repos.profiles import (
+    PROFILE_COLUMNS,
+    ProfileWriteError,
+    get_own_profile,
+    update_own,
+)
 from supabase import create_client
 
 RESULTS = {"passed": 0, "failed": 0}
@@ -57,6 +63,19 @@ def demo_credentials() -> tuple[str | None, str | None]:
     return None, None
 
 
+def probe_credentials() -> tuple[str | None, str | None]:
+    email = os.environ.get("FINDINGS_PROBE_EMAIL")
+    password = os.environ.get("FINDINGS_PROBE_PASSWORD")
+    if email and password:
+        return email, password
+    path = ROOT / "scripts" / "local.toml"
+    if path.exists():
+        with open(path, "rb") as fh:
+            data = tomllib.load(fh)
+        return data.get("PROBE_EMAIL"), data.get("PROBE_PASSWORD")
+    return None, None
+
+
 def run_anon(url: str, key: str) -> None:
     anon = create_client(url, key)
     try:
@@ -94,6 +113,29 @@ def run_demo(url: str, key: str, email: str, password: str) -> None:
         report("D3", len(rows or []) == 1, f"{len(rows or [])} rows")
     except Exception as err:
         report("D3", False, f"error {type(err).__name__}")
+    orig_interests = []
+    try:
+        own_row = get_own_profile(sb, user_id, columns=PROFILE_COLUMNS)
+        report("D11", own_row is not None and "interests" in own_row)
+        orig_interests = list(own_row.get("interests") or []) if own_row else []
+    except Exception as err:
+        report("D11", False, f"error {type(err).__name__}")
+    try:
+        test_interests = orig_interests + ["Findings live check"]
+        updated_row = update_own(
+            sb, user_id, {"interests": test_interests}, columns=PROFILE_COLUMNS
+        )
+        report("D12", "Findings live check" in (updated_row.get("interests") or []))
+    except Exception as err:
+        report("D12", False, f"error {type(err).__name__}")
+    finally:
+        try:
+            restored = update_own(
+                sb, user_id, {"interests": orig_interests}, columns=PROFILE_COLUMNS
+            )
+            report("D13", (restored.get("interests") or []) == orig_interests)
+        except Exception as err:
+            report("D13", False, f"error {type(err).__name__}")
     try:
         other = str(uuid.uuid4())
         rows = sb.table("profiles").update({"full_name": "x"}).eq("id", other).execute().data
@@ -128,6 +170,118 @@ def run_demo(url: str, key: str, email: str, password: str) -> None:
         report("D10", False, f"error {type(err).__name__}")
 
 
+def run_probe(
+    url: str,
+    key: str,
+    demo_email: str,
+    demo_password: str,
+    probe_email: str,
+    probe_password: str,
+) -> None:
+    demo_client = create_client(url, key)
+    probe_client = create_client(url, key)
+
+    try:
+        demo_res = demo_client.auth.sign_in_with_password(
+            {"email": demo_email, "password": demo_password}
+        )
+        demo_id = demo_res.user.id
+    except Exception as err:
+        report("P0-demo-signin", False, f"error {type(err).__name__}")
+        return
+
+    try:
+        probe_res = probe_client.auth.sign_in_with_password(
+            {"email": probe_email, "password": probe_password}
+        )
+        probe_id = probe_res.user.id
+        report("P1", True)
+    except Exception as err:
+        report("P1", False, f"error {type(err).__name__}")
+        return
+
+    try:
+        # P2: probe updates its own row
+        p2_row = update_own(
+            probe_client,
+            probe_id,
+            {
+                "full_name": "RLS probe",
+                "career_stage": "PhD",
+                "interests": ["RLS probe"],
+                "is_complete": True,
+            },
+        )
+        report(
+            "P2",
+            p2_row is not None
+            and p2_row.get("full_name") == "RLS probe"
+            and p2_row.get("interests") == ["RLS probe"],
+        )
+
+        # P3: demo selects probe row
+        rows = demo_client.table("profiles").select("id").eq("id", probe_id).execute().data or []
+        report("P3", len(rows) == 1, f"{len(rows)} rows")
+
+        # P4: demo raw update of probe row yields 0 rows
+        p4_rows = (
+            demo_client.table("profiles")
+            .update({"full_name": "hijacked"})
+            .eq("id", probe_id)
+            .execute()
+            .data
+            or []
+        )
+        report("P4", len(p4_rows) == 0, f"{len(p4_rows)} rows")
+
+        # P5: update_own from demo client on probe id raises ProfileWriteError
+        try:
+            update_own(demo_client, probe_id, {"full_name": "hijacked"})
+            report("P5", False, "no error raised")
+        except ProfileWriteError:
+            report("P5", True)
+        except Exception as exc:
+            report("P5", False, f"unexpected error {type(exc).__name__}")
+
+        # P6: probe re-reads own row -> still "RLS probe"
+        p6_row = get_own_profile(probe_client, probe_id)
+        report("P6", p6_row is not None and p6_row.get("full_name") == "RLS probe")
+
+        # P7: updating generated ungranted column raises
+        ok, detail = raises(
+            lambda: demo_client.table("profiles")
+            .update({"methods_effective": "quantitative"})
+            .eq("id", demo_id)
+            .execute()
+        )
+        report("P7", ok, detail)
+
+        # P8: inserting random profile raises
+        ok, detail = raises(
+            lambda: demo_client.table("profiles")
+            .insert({"id": str(uuid.uuid4()), "full_name": "attacker"})
+            .execute()
+        )
+        report("P8", ok, detail)
+
+    finally:
+        # P9: reset probe is_complete to False
+        try:
+            p9_row = update_own(probe_client, probe_id, {"is_complete": False})
+            report("P9", p9_row is not None and p9_row.get("is_complete") is False)
+        except Exception as exc:
+            report("P9", False, f"error {type(exc).__name__}")
+
+        try:
+            demo_client.auth.sign_out()
+        except Exception:
+            pass
+        try:
+            probe_client.auth.sign_out()
+        except Exception:
+            pass
+
+
 def main() -> int:
     settings = load_local_settings(str(ROOT / ".streamlit" / "secrets.toml"))
     url, key = settings.supabase_url, settings.supabase_publishable_key
@@ -138,9 +292,18 @@ def main() -> int:
         print(f"{RESULTS['passed']} passed, {RESULTS['failed']} failed")
         return 2
     run_demo(url, key, email, password)
+
+    probe_email, probe_password = probe_credentials()
+    if not (probe_email and probe_password):
+        print("SKIP: no probe credentials, P1-P9 not run (set scripts/local.toml or env vars)")
+        print(f"{RESULTS['passed']} passed, {RESULTS['failed']} failed")
+        return 2 if not RESULTS["failed"] else 1
+
+    run_probe(url, key, email, password, probe_email, probe_password)
     print(f"{RESULTS['passed']} passed, {RESULTS['failed']} failed")
     return 1 if RESULTS["failed"] else 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
+

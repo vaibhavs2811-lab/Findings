@@ -291,3 +291,9 @@ $$;
 
 revoke execute on function public.get_contact_email(uuid) from public, anon;
 grant execute on function public.get_contact_email(uuid) to authenticated;
+
+-- 10. Phase 2: methods suggestion bookkeeping (additive, nullable). Must stay after section 8, which re-runs revoke update + grant update on profiles.
+alter table public.profiles add column if not exists methods_hash text;
+alter table public.profiles add column if not exists methods_reason text check (char_length(methods_reason) <= 300);
+grant update (methods_hash, methods_reason) on public.profiles to authenticated;
+notify pgrst, 'reload schema';

@@ -27,8 +27,8 @@ The last phase turns the screenshots collected in each phase into the rubric doc
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Sign-in** - Live app on Streamlit Cloud with OTP and demo-password sign-in, on the full schema, RLS, SMTP and keep-alive (completed 2026-10-05)
-- [ ] **Phase 2: Researcher Profiles** - Researchers create and edit their own profile: career stage, mentoring toggles, give/need fields and an AI-suggested methods badge
-- [ ] **Phase 3: Researcher Pool & Discover** - 60-100 labelled synthetic researchers seeded with embeddings; browse, filter, search and skip cards; open profile pages
+- [x] **Phase 2: Researcher Profiles** - Researchers create and edit their own profile: career stage, mentoring toggles, give/need fields and an AI-suggested methods badge (completed 2026-10-05)
+- [x] **Phase 3: Researcher Pool & Discover** - 60-100 labelled synthetic researchers seeded with embeddings; browse, filter, search and skip cards; open profile pages (completed 2026-10-05)
 - [ ] **Phase 4: AI Peer Matching** - "My Matches": pgvector shortlist plus a Gemini rerank with grounded explanations, cached, with an embedding-only fallback
 - [ ] **Phase 5: Connections & Email Unlock** - Send, accept or decline requests from anywhere; contact email is revealed only after accept, enforced in the database
 - [ ] **Phase 6: Mentorship Mode** - Find a mentor or a mentee, ranked on two-way give/need fit, with both sides of the exchange explained
@@ -103,9 +103,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Tracer + complete My profile form, read-only view and Home CTA (PROF-01..04) [wave 1]
-- [ ] 02-02-PLAN.md — Shared streamlit-free Gemini client, methods classifier, schema section, live smoke script (PROF-05) [wave 1]
-- [ ] 02-03-PLAN.md — [BLOCKING] schema/key/probe setup, hash-gated methods badge + override, live RLS probe (PROF-05, PROF-06) [wave 2]
+- [x] 02-01-PLAN.md — Tracer + complete My profile form, read-only view and Home CTA (PROF-01..04) [wave 1]
+- [x] 02-02-PLAN.md — Shared streamlit-free Gemini client, methods classifier, schema section, live smoke script (PROF-05) [wave 1]
+- [x] 02-03-PLAN.md — [BLOCKING] schema/key/probe setup, hash-gated methods badge + override, live RLS probe (PROF-05, PROF-06) [wave 2]
 **UI hint**: yes
 
 ### Phase 3: Researcher Pool & Discover
@@ -131,7 +131,12 @@ Plans:
 - **Fallback demo:** Discover is the fallback demo path if matching breaks.
 
 **Docs capture**: Discover grid with Synthetic labels, each filter applied, keyword search, Skip, profile page with no email shown, seed diversity stats
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 03-01-PLAN.md — Discover UI, card badges, filtering, search, session skip, and public profile view (DISC-01..05, PROF-07, DATA-03 UI) [wave 1]
+- [x] 03-02-PLAN.md — Synthetic researcher generator & dataset (DATA-01) [wave 2]
+- [x] 03-03-PLAN.md — Embedding builder & seed loader (DATA-02, DATA-03 backend) [wave 2]
 **UI hint**: yes
 
 ### Phase 4: AI Peer Matching
