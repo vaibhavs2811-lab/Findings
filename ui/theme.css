@@ -293,3 +293,17 @@ hr { border-color: var(--fx-border) !important; }
   .fx-lead { font-size: 0.95rem; }
   .fx-display { font-size: 1.9rem; }
 }
+
+/* ---------- Profile ---------- */
+[class*="st-key-fxhero-profile"] h3 { font-size: 1.9rem !important; margin: 0; padding: 0; }
+[class*="st-key-fxpanel-p-"] [data-testid="stText"] { font-family: 'Inter', sans-serif !important; white-space: pre-wrap; line-height: 1.55; }
+[class*="st-key-fxpanel-p-"] [data-testid="stCaptionContainer"] {
+  text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.7rem; font-weight: 700; margin-top: 0.6rem;
+}
+
+/* ---------- Polish ---------- */
+h1 { padding-top: 0.25rem !important; }
+[data-testid="stButtonGroup"] > div, [data-testid="stButtonGroup"] { flex-wrap: wrap; }
+.fx-chip { font-size: 0.74rem; padding: 0.2rem 0.6rem; }
+
+[class*="st-key-fxpanel-preview"] { position: sticky; top: 4.5rem; align-self: flex-start; }

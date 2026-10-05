@@ -19,6 +19,8 @@ from findings.core.constants import (
 from findings.repos.profiles import get_own_profile
 from findings.services import profile_service as ps
 from ui.autofill_panel import render_autofill_panel
+from ui.cards import card_header_html
+from ui.components import completeness, meter_html
 from ui.profile_view import render_profile
 
 # 1. Pop & show flash message from previous action
@@ -113,106 +115,115 @@ else:
     if "f_name" not in st.session_state:
         _seed(profile or {})
 
-    render_autofill_panel()
+    main_col, side_col = st.columns([3, 2], gap="large")
+    with main_col:
+        render_autofill_panel()
 
-    # About you
-    st.subheader("About you")
-    st.text_input("Full name", key="f_name", max_chars=120)
-    st.selectbox(
-        "Career stage",
-        CAREER_STAGES,
-        index=None,
-        key="f_stage",
-        on_change=_on_stage,
-        placeholder="Choose your career stage",
-    )
-    st.text_input("Institution", key="f_institution", max_chars=2000)
-    st.text_area("Education background", key="f_education", max_chars=2000)
+        # About you
+        st.subheader("About you")
+        st.text_input("Full name", key="f_name", max_chars=120)
+        st.selectbox(
+            "Career stage",
+            CAREER_STAGES,
+            index=None,
+            key="f_stage",
+            on_change=_on_stage,
+            placeholder="Choose your career stage",
+        )
+        st.text_input("Institution", key="f_institution", max_chars=2000)
+        st.text_area("Education background", key="f_education", max_chars=2000)
 
-    # Research
-    st.subheader("Research")
-    st.multiselect("Research interests", PRESET_INTERESTS, key="f_interests", accept_new_options=True)
-    st.text_area("Research experience", key="f_experience", max_chars=2000)
-    st.multiselect("Skills & methods", PRESET_SKILLS, key="f_skills", accept_new_options=True)
-    st.text_area("Bio", key="f_bio", max_chars=2000)
-    st.text_area("What I'm looking for", key="f_looking_for", max_chars=2000)
+        # Research
+        st.subheader("Research")
+        st.multiselect("Research interests", PRESET_INTERESTS, key="f_interests", accept_new_options=True)
+        st.text_area("Research experience", key="f_experience", max_chars=2000)
+        st.multiselect("Skills & methods", PRESET_SKILLS, key="f_skills", accept_new_options=True)
+        st.text_area("Bio", key="f_bio", max_chars=2000)
+        st.text_area("What I'm looking for", key="f_looking_for", max_chars=2000)
 
-    # Mentoring exchange
-    st.subheader("Mentoring exchange")
-    st.toggle("Seeking a mentor", key="f_seeking")
-    st.toggle("Open to mentoring", key="f_open")
+        # Mentoring exchange
+        st.subheader("Mentoring exchange")
+        st.toggle("Seeking a mentor", key="f_seeking")
+        st.toggle("Open to mentoring", key="f_open")
 
-    if st.session_state.get("f_open"):
-        st.multiselect("What I can offer", PRESET_OFFERS, key="f_offers", accept_new_options=True)
-        st.multiselect("What I need help with", PRESET_NEEDS, key="f_needs", accept_new_options=True)
+        if st.session_state.get("f_open"):
+            st.multiselect("What I can offer", PRESET_OFFERS, key="f_offers", accept_new_options=True)
+            st.multiselect("What I need help with", PRESET_NEEDS, key="f_needs", accept_new_options=True)
 
-    if st.session_state.get("f_seeking"):
-        st.multiselect("Skills I can contribute", PRESET_SKILLS, key="f_contrib", accept_new_options=True)
-        st.multiselect("What I want to learn", PRESET_SKILLS, key="f_learn", accept_new_options=True)
+        if st.session_state.get("f_seeking"):
+            st.multiselect("Skills I can contribute", PRESET_SKILLS, key="f_contrib", accept_new_options=True)
+            st.multiselect("What I want to learn", PRESET_SKILLS, key="f_learn", accept_new_options=True)
 
-    # Build form state for validation / display
-    form_data = {
-        "full_name": st.session_state.get("f_name"),
-        "career_stage": st.session_state.get("f_stage"),
-        "institution": st.session_state.get("f_institution"),
-        "education": st.session_state.get("f_education"),
-        "experience": st.session_state.get("f_experience"),
-        "bio": st.session_state.get("f_bio"),
-        "looking_for": st.session_state.get("f_looking_for"),
-        "interests": st.session_state.get("f_interests", []),
-        "skills": st.session_state.get("f_skills", []),
-        "seeking_mentor": st.session_state.get("f_seeking", False),
-        "open_to_mentoring": st.session_state.get("f_open", False),
-        "offers": st.session_state.get("f_offers", []) if st.session_state.get("f_open") else [],
-        "needs": st.session_state.get("f_needs", []) if st.session_state.get("f_open") else [],
-        "contributable_skills": (
-            st.session_state.get("f_contrib", []) if st.session_state.get("f_seeking") else []
-        ),
-        "want_to_learn": (
-            st.session_state.get("f_learn", []) if st.session_state.get("f_seeking") else []
-        ),
-    }
+        # Build form state for validation / display
+        form_data = {
+            "full_name": st.session_state.get("f_name"),
+            "career_stage": st.session_state.get("f_stage"),
+            "institution": st.session_state.get("f_institution"),
+            "education": st.session_state.get("f_education"),
+            "experience": st.session_state.get("f_experience"),
+            "bio": st.session_state.get("f_bio"),
+            "looking_for": st.session_state.get("f_looking_for"),
+            "interests": st.session_state.get("f_interests", []),
+            "skills": st.session_state.get("f_skills", []),
+            "seeking_mentor": st.session_state.get("f_seeking", False),
+            "open_to_mentoring": st.session_state.get("f_open", False),
+            "offers": st.session_state.get("f_offers", []) if st.session_state.get("f_open") else [],
+            "needs": st.session_state.get("f_needs", []) if st.session_state.get("f_open") else [],
+            "contributable_skills": (
+                st.session_state.get("f_contrib", []) if st.session_state.get("f_seeking") else []
+            ),
+            "want_to_learn": (
+                st.session_state.get("f_learn", []) if st.session_state.get("f_seeking") else []
+            ),
+        }
 
-    missing = ps.missing_for_complete(form_data)
-    if missing:
-        st.caption("Missing for a complete profile: " + ", ".join(missing) + ".")
+        missing = ps.missing_for_complete(form_data)
+        if missing:
+            st.caption("Missing for a complete profile: " + ", ".join(missing) + ".")
 
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        if st.button("Save", key="profile_save", type="primary"):
-            try:
-                with st.spinner("Saving your profile..."):
-                    saved = ps.save_profile(st.session_state["sb"], user_id, form_data)
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("Save", key="profile_save", type="primary"):
+                try:
+                    with st.spinner("Saving your profile..."):
+                        saved = ps.save_profile(st.session_state["sb"], user_id, form_data)
 
-                ai_status = saved.get("ai_status", "unchanged")
-                if ai_status == "updated":
-                    base_msg = "Profile saved. Methods label updated."
-                    kind = "success"
-                elif ai_status == "unavailable":
-                    base_msg = (
-                        "Profile saved. The AI methods suggestion is unavailable right now; "
-                        "it will be tried again the next time you save."
-                    )
-                    kind = "warning"
-                else:
-                    base_msg = "Profile saved."
-                    kind = "success"
+                    ai_status = saved.get("ai_status", "unchanged")
+                    if ai_status == "updated":
+                        base_msg = "Profile saved. Methods label updated."
+                        kind = "success"
+                    elif ai_status == "unavailable":
+                        base_msg = (
+                            "Profile saved. The AI methods suggestion is unavailable right now; "
+                            "it will be tried again the next time you save."
+                        )
+                        kind = "warning"
+                    else:
+                        base_msg = "Profile saved."
+                        kind = "success"
 
-                if saved.get("is_complete"):
-                    st.session_state["flash"] = (kind, base_msg)
-                    st.session_state["profile_mode"] = "view"
-                else:
-                    missing_labels = ", ".join(ps.missing_for_complete(form_data))
-                    full_msg = f"{base_msg} Add {missing_labels} to complete your profile."
-                    st.session_state["flash"] = ("info", full_msg)
-                    st.session_state["profile_mode"] = "edit"
+                    if saved.get("is_complete"):
+                        st.session_state["flash"] = (kind, base_msg)
+                        st.session_state["profile_mode"] = "view"
+                    else:
+                        missing_labels = ", ".join(ps.missing_for_complete(form_data))
+                        full_msg = f"{base_msg} Add {missing_labels} to complete your profile."
+                        st.session_state["flash"] = ("info", full_msg)
+                        st.session_state["profile_mode"] = "edit"
 
-                for k in [k for k in st.session_state if k.startswith("f_")]:
-                    del st.session_state[k]
-                st.rerun()
-            except ps.ProfileSaveError as err:
-                st.error(str(err))
+                    for k in [k for k in st.session_state if k.startswith("f_")]:
+                        del st.session_state[k]
+                    st.rerun()
+                except ps.ProfileSaveError as err:
+                    st.error(str(err))
 
-    with col2:
-        if profile and profile.get("is_complete"):
-            st.button("Cancel", key="profile_cancel", on_click=_on_cancel)
+        with col2:
+            if profile and profile.get("is_complete"):
+                st.button("Cancel", key="profile_cancel", on_click=_on_cancel)
+
+    with side_col, st.container(key="fxpanel-preview"):
+        pct, still = completeness(form_data)
+        st.html('<span class="fx-eyebrow">Live preview</span>')
+        st.html(card_header_html(dict(form_data, methods_effective=(profile or {}).get("methods_effective"))))
+        st.html(meter_html(pct))
+        st.caption(f"Profile {pct}% complete" + (f" · add: {', '.join(still[:3])}" if still else ""))

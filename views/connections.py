@@ -8,6 +8,7 @@ import streamlit as st
 
 from findings.core.session import current_user
 from findings.services import connection_service
+from ui.components import avatar_html, empty_state, pill_html
 
 
 def _handle_response(
@@ -30,7 +31,9 @@ def _handle_response(
 
 def render_connections_page() -> None:
     """Render Connections tabs for incoming, sent, and unlocked connections."""
+    st.html('<span class="fx-eyebrow">Your network</span>')
     st.title("Connections")
+    st.caption("Requests you received, requests you sent, and the people you are connected with.")
 
     sb = st.session_state.get("sb")
     user = current_user()
@@ -68,9 +71,23 @@ def render_connections_page() -> None:
         ]
     )
 
+    def _person_header(name: str, stage: str, pill: str = "") -> None:
+        av, info = st.columns([1, 6], vertical_alignment="center")
+        with av:
+            st.html(avatar_html(name, 48))
+        with info:
+            st.subheader(name)
+            if stage or pill:
+                st.html(
+                    '<div class="fx-pills">'
+                    + (pill_html(stage, "gray") if stage else "")
+                    + pill
+                    + "</div>"
+                )
+
     with tab_rec:
         if not received:
-            st.caption("No incoming connection requests.")
+            empty_state("📥", "No incoming requests", "When someone wants to connect, their request shows up here.")
         else:
             for item in received:
                 cid = str(item.get("connection_id") or "")
@@ -78,18 +95,17 @@ def render_connections_page() -> None:
                 other_stage = item.get("other_stage") or ""
                 note = item.get("note")
 
-                with st.container(border=True):
+                with st.container(border=True, key=f"fxcard-conn-rec-{cid}"):
                     col_info, col_act = st.columns([3, 1])
                     with col_info:
-                        st.subheader(other_name)
-                        if other_stage:
-                            st.caption(other_stage)
+                        _person_header(other_name, other_stage, pill_html("Wants to connect", "violet"))
                         if note:
                             st.text(note)
                     with col_act:
                         st.button(
                             "Accept",
                             key=f"accept_{cid}",
+                            type="primary",
                             on_click=_handle_response,
                             args=(sb, user_id, cid, True),
                         )
@@ -102,7 +118,7 @@ def render_connections_page() -> None:
 
     with tab_sent:
         if not sent:
-            st.caption("No sent connection requests.")
+            empty_state("📤", "No sent requests", "Requests you send from Discover or My Matches appear here.")
         else:
             for item in sent:
                 other_name = item.get("other_name") or "Unnamed researcher"
@@ -110,32 +126,34 @@ def render_connections_page() -> None:
                 note = item.get("note")
                 status_raw = item.get("status")
                 status_label = "Pending" if status_raw == "pending" else "Not accepted"
+                tone = "amber" if status_raw == "pending" else "gray"
 
-                with st.container(border=True):
-                    st.subheader(other_name)
+                with st.container(border=True, key=f"fxcard-conn-sent-{item.get('connection_id')}"):
+                    _person_header(other_name, other_stage, pill_html(status_label, tone))
                     st.caption(f"{other_stage} · {status_label}")
                     if note:
                         st.text(note)
 
     with tab_conn:
         if not connected:
-            st.caption("No accepted connections yet. Connect with researchers on Discover or My Matches!")
+            empty_state(
+                "🤝",
+                "No connections yet",
+                "Connect with researchers on Discover or My Matches. Their email appears here once they accept.",
+            )
         else:
             for item in connected:
                 other_name = item.get("other_name") or "Unnamed researcher"
                 other_stage = item.get("other_stage") or ""
                 other_email = item.get("other_email") or ""
 
-                with st.container(border=True):
-                    st.subheader(other_name)
-                    cap_text = f"{other_stage}"
-                    st.caption(cap_text)
-
-                    st.markdown("**Contact email:**")
+                with st.container(border=True, key=f"fxcard-conn-ok-{item.get('connection_id')}"):
+                    _person_header(other_name, other_stage, pill_html("Connected", "green"))
                     if other_email:
+                        st.html('<div class="fx-email">✉️ Contact email unlocked</div>')
                         st.code(other_email, language="")
                     else:
-                        st.caption("Email unavailable")
+                        st.html('<div class="fx-email locked">Email unavailable</div>')
 
 
 render_connections_page()

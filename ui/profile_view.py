@@ -49,96 +49,95 @@ def methods_badge(profile: dict | None) -> None:
         st.text(profile["methods_reason"])
 
 
-def render_profile(profile: dict | None, *, show_email: bool = False) -> None:
-    """Render a read-only profile card.
+def _chips(label: str, items: list[str] | None, limit: int = 12) -> None:
+    from ui.components import chips_html
 
-    All user text is rendered safely using st.text to prevent markdown/HTML injection.
+    html = chips_html(items, limit=limit)
+    if html:
+        st.caption(label)
+        st.html(html)
+
+
+def render_profile(profile: dict | None, *, show_email: bool = False) -> None:
+    """Render a read-only profile as a designed page.
+
+    The name and all long free text use native elements (safe, plain text); short list values
+    are shown as escaped chips. Email appears only if show_email=True and an email key exists.
     """
+    from ui.cards import mentoring_pills
+    from ui.components import avatar_html
+
     if not profile:
         st.caption("No profile information available.")
         return
 
-    # Heading (sanitised name)
     header_name = _clean_header_name(profile.get("full_name"))
-    st.subheader(header_name)
-
-    # Methods orientation badge and AI rationale
-    methods_badge(profile)
-
-    # Primary details
     stage = profile.get("career_stage")
     institution = profile.get("institution")
-    education = profile.get("education")
 
-    detail_parts = [p for p in [stage, institution] if p]
-    if detail_parts:
-        st.caption(" · ".join(detail_parts))
+    with st.container(key="fxhero-profile"):
+        av, info = st.columns([1, 5], vertical_alignment="center")
+        with av:
+            st.html(avatar_html(header_name, 92))
+        with info:
+            st.subheader(header_name)
+            detail_parts = [p for p in [stage, institution] if p]
+            if detail_parts:
+                st.caption(" · ".join(detail_parts))
+            methods_badge(profile)
+            roles = mentoring_pills(profile)
+            if roles:
+                st.html(f'<div class="fx-pills" style="margin-top:.4rem">{roles}</div>')
 
-    if education:
-        st.caption("Education")
-        st.text(education)
+    left, right = st.columns([3, 2], gap="medium")
 
-    # Email display: strictly gated by show_email flag
-    if show_email and profile.get("email"):
-        st.caption("Contact email")
-        st.text(profile["email"])
+    with left, st.container(key="fxpanel-p-about"):
+        st.html('<div class="fx-tile-title">About</div>')
+        bio = profile.get("bio")
+        if bio:
+            st.caption("Bio")
+            st.text(bio)
+        looking_for = profile.get("looking_for")
+        if looking_for:
+            st.caption("What I'm looking for")
+            st.text(looking_for)
+        experience = profile.get("experience")
+        if experience:
+            st.caption("Research experience")
+            st.text(experience)
+        education = profile.get("education")
+        if education:
+            st.caption("Education")
+            st.text(education)
+        if not any([bio, looking_for, experience, education]):
+            st.caption("Nothing here yet.")
 
-    # Research section
-    interests = profile.get("interests") or []
-    if interests:
-        st.caption("Research interests")
-        st.text(" · ".join(interests))
+    with right, st.container(key="fxpanel-p-research"):
+        st.html('<div class="fx-tile-title">Research</div>')
+        _chips("Research interests", profile.get("interests"))
+        _chips("Skills & methods", profile.get("skills"))
+        if show_email and profile.get("email"):
+            st.caption("Contact email")
+            st.text(profile["email"])
 
-    skills = profile.get("skills") or []
-    if skills:
-        st.caption("Skills & methods")
-        st.text(" · ".join(skills))
-
-    experience = profile.get("experience")
-    if experience:
-        st.caption("Research experience")
-        st.text(experience)
-
-    bio = profile.get("bio")
-    if bio:
-        st.caption("Bio")
-        st.text(bio)
-
-    looking_for = profile.get("looking_for")
-    if looking_for:
-        st.caption("What I'm looking for")
-        st.text(looking_for)
-
-    # Mentoring exchange section
-    seeking = bool(profile.get("seeking_mentor"))
-    open_mentor = bool(profile.get("open_to_mentoring"))
-
-    mentoring_roles: list[str] = []
-    if seeking:
-        mentoring_roles.append("Seeking a mentor")
-    if open_mentor:
-        mentoring_roles.append("Open to mentoring")
-
-    if mentoring_roles:
-        st.caption("Mentoring status")
-        st.text(" · ".join(mentoring_roles))
-
-    offers = profile.get("offers") or []
-    if offers:
-        st.caption("What I can offer")
-        st.text(" · ".join(offers))
-
-    needs = profile.get("needs") or []
-    if needs:
-        st.caption("What I need help with")
-        st.text(" · ".join(needs))
-
-    contrib = profile.get("contributable_skills") or []
-    if contrib:
-        st.caption("Skills I can contribute")
-        st.text(" · ".join(contrib))
-
-    learn = profile.get("want_to_learn") or []
-    if learn:
-        st.caption("What I want to learn")
-        st.text(" · ".join(learn))
+    give_need = [
+        ("What I can offer", profile.get("offers")),
+        ("What I need help with", profile.get("needs")),
+        ("Skills I can contribute", profile.get("contributable_skills")),
+        ("What I want to learn", profile.get("want_to_learn")),
+    ]
+    roles_present = bool(profile.get("seeking_mentor") or profile.get("open_to_mentoring"))
+    if roles_present or any(items for _, items in give_need):
+        with st.container(key="fxpanel-p-exchange"):
+            st.html('<div class="fx-tile-title">Mentoring exchange</div>')
+            seeking = bool(profile.get("seeking_mentor"))
+            open_mentor = bool(profile.get("open_to_mentoring"))
+            status = [t for t, on in (("Seeking a mentor", seeking), ("Open to mentoring", open_mentor)) if on]
+            if status:
+                st.caption("Mentoring status")
+                st.text(" · ".join(status))
+            cols = st.columns(2)
+            for idx, (label, items) in enumerate(give_need):
+                if items:
+                    with cols[idx % 2]:
+                        _chips(label, items)

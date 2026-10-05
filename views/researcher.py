@@ -32,6 +32,7 @@ if not profile:
     st.page_link("views/discover.py", label="Back to Discover", icon=":material/arrow_back:")
     st.stop()
 
+st.page_link("views/discover.py", label="Back to Discover", icon=":material/arrow_back:")
 render_profile(profile, show_email=False)
 
 user = current_user()
@@ -45,5 +46,3 @@ if user and sb and str(raw_id) != str(user.get("id")):
         name=profile.get("full_name") or "",
         is_synthetic=bool(profile.get("is_synthetic")),
     )
-
-st.page_link("views/discover.py", label="Back to Discover", icon=":material/arrow_back:")
