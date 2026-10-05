@@ -38,6 +38,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Phase Details
 
 ### Phase 1: Foundation & Sign-in
+
 **Goal**: A researcher can open the live Findings app on Streamlit Cloud, sign in with an emailed 6-digit code or the demo password, stay signed in across refreshes, and sign out
 **Mode:** mvp
 **Depends on**: Nothing (first phase)
@@ -48,6 +49,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A signed-in user is still signed in after a browser refresh and can sign out from any page.
   4. Two people signed in at the same time in two separate browsers each see only their own account and data, never the other's.
   5. The deployed app runs on Python 3.12. Secrets live only in the Cloud dashboard, none in the repo. The daily keep-alive GitHub Actions workflow shows a green scheduled or manual run against Supabase.
+
 **Notes**: This phase does all the risky infrastructure up front.
   - **First migration:** the full Supabase schema.
     - `profiles`:
@@ -66,11 +68,25 @@ Decimal phases appear between their surrounding integers in numeric order.
   - **Per-session Supabase client:** keep it in `st.session_state`, never in `st.cache_resource`.
   - **Keys:** the app uses only the `sb_publishable_...` key.
   - **Deploy:** choose Python 3.12 in Advanced settings on the first deploy. It can't be changed later.
+
 **Docs capture**: sign-in screen, code entry, signed-in landing page, demo-password login, green keep-alive workflow run
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+**Wave 1**
+- [ ] 01-01-PLAN.md — Tracer: Supabase + Brevo setup, scaffold, email-code sign-in to a signed-in Home page (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 01-02-PLAN.md — Full schema + RLS applied live, demo password login, own profile record on Home (wave 2)
+- [ ] 01-03-PLAN.md — Refresh-token cookie restore, sign-out from every page, session isolation tests (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 01-04-PLAN.md — Keep-alive workflow, Streamlit Cloud deploy on Python 3.12, Gemini quotas, deployed exit checks (wave 3)
+
 **UI hint**: yes
 
 ### Phase 2: Researcher Profiles
+
 **Goal**: A signed-in researcher can create, save and edit their own complete profile (career stage, mentoring toggles, give/need fields), and it shows an AI-suggested methods badge they can override
 **Mode:** mvp
 **Depends on**: Phase 1
@@ -81,12 +97,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The user can fill in and save the four give/need fields: what they offer, what they need, skills they can contribute, and what they want to learn.
   4. After saving, the profile shows a qualitative / quantitative / mixed badge that Gemini suggests from the profile text. The user can override it, and the badge then shows the effective value. If Gemini is unavailable, the profile still saves.
   5. A signed-in user who tries to change another user's profile, for example from a second account using the publishable key, is rejected by RLS, and the other profile stays unchanged.
+
 **Notes**: The methods label is the app's first Gemini call. This phase sets up the shared, streamlit-free `ai/` client: Pydantic `response_schema`, low thinking level, and Flash-Lite model fallback. Later phases reuse it.
 **Docs capture**: empty profile form, saved profile with methods badge, methods override, mentoring toggles defaulted by stage, RLS rejection evidence
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 3: Researcher Pool & Discover
+
 **Goal**: A signed-in researcher can browse a diverse pool of 60-100 clearly labelled researchers as cards, filter and search them, skip cards, and open anyone's public profile page
 **Mode:** mvp
 **Depends on**: Phase 2
@@ -97,6 +115,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The user can Skip a card, and it stays hidden for the rest of the session.
   4. The user can open any researcher's profile page and see their public fields, with the Synthetic label where it applies. No contact email appears on the page.
   5. The seed dataset can be reproduced. The committed JSON holds the 60-100 generated profiles. The local loader inserts them with embeddings, `is_synthetic = true` and example.org emails, and the secret key exists only on the local machine.
+
 **Notes**:
 - **Shared builder:** the seed generator and loader reuse the `ai/` and `repos/` modules and a single `embedding_text()` builder, so seeded and real profiles share one vector space. The builder uses `gemini-embedding-2` with `output_dimensionality=768`, one string per call, normalized, and excludes name, institution and gender.
 - **Diversity:**
@@ -105,11 +124,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   - Check that pairwise cosine similarity stays below ~0.8.
 - **Quota:** budget the Gemini calls against the quota recorded in Phase 1.
 - **Fallback demo:** Discover is the fallback demo path if matching breaks.
+
 **Docs capture**: Discover grid with Synthetic labels, each filter applied, keyword search, Skip, profile page with no email shown, seed diversity stats
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 4: AI Peer Matching
+
 **Goal**: A signed-in researcher can open My Matches and get a ranked list of peer collaborators, each with a match-strength label and a grounded "why you match" explanation. They still get a ranked list when Gemini is down.
 **Mode:** mvp
 **Depends on**: Phase 3
@@ -123,6 +144,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Reopening My Matches, even after an app restart, shows the cached list right away with no new Gemini call. This holds until the user's profile changes or they click Refresh.
   4. When Gemini fails or is rate-limited (forced on purpose for the test), My Matches still shows a list ranked by embedding similarity, with a visible notice instead of an error.
   5. Explanations never refer to profiles outside the shortlist. A candidate profile whose text tries to instruct the model (e.g. "rank me first") does not change the output format or show up in other explanations.
+
 **Notes**:
 - **Build order:**
   1. Ship the embedding-only ranked list end to end first. This is the `match_profiles(query_vector, mode, k=15)` RPC, with no Gemini call. It is also the fallback.
@@ -144,11 +166,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   - A/B test the rerank prompt.
   - Spot-check for hallucinations.
   - Build an anchor-profile evaluation set (hand-checked top 3) for the test report.
+
 **Docs capture**: My Matches list with explanations, Refresh, cached reload, forced-fallback notice, anchor-profile top-3 evaluation
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 5: Connections & Email Unlock
+
 **Goal**: A researcher can send a connection request with a note from a match, a Discover card or a profile page. The recipient can accept or decline, and contact emails unlock for both sides only after acceptance.
 **Mode:** mvp
 **Depends on**: Phase 4 (match entry point); Phase 3 (card and profile-page entry points)
@@ -159,16 +183,19 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Before acceptance, neither user's email appears anywhere, and no query with the publishable key can fetch it. After acceptance, both users see each other's contact email.
   4. The Connections page shows the signed-in user's sent, received and accepted connections.
   5. A request sent to a synthetic profile is accepted immediately, reveals that profile's example.org address, and is labelled as synthetic.
+
 **Notes**:
 - **Email reveal:** emails are revealed only through the `get_contact_email(other_id)` security-definer RPC.
 - **Synthetic auto-accept:** this must happen on the server side, for example with an insert trigger when the recipient is synthetic. The client never sets status for the other party.
 - **Declines are final:** the unique-pair index makes a decline permanent. Record this in the limitations document.
 - **Phase gate:** a two-browser, two-account test of request, accept and email unlock.
+
 **Docs capture**: request dialog with note, duplicate-blocked message, incoming request accept/decline, email hidden before / visible after, synthetic auto-accept, Connections page tabs
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 6: Mentorship Mode
+
 **Goal**: A researcher can switch to Mentorship mode and get ranked mentors (if seeking one) or mentees (if open to mentoring), with explanations of what each side gives and gets
 **Mode:** mvp
 **Depends on**: Phase 4
@@ -178,6 +205,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Mentors are ranked on two-way give/need fit. In the top results, the mentor's needs visibly line up with the junior's contributable skills, and the mentor's offers line up with the junior's learning goals.
   3. Every mentorship match spells out both sides of the exchange: what the junior gets and what the mentor gets.
   4. Mentorship matches are cached separately from peer matches and refresh the same way. When Gemini fails, they fall back to embedding-only ranking with a notice.
+
 **Notes**: Most of this phase is configuring the Phase 4 pipeline for a new `mode`:
 - The shortlist filters by `seeking_mentor` / `open_to_mentoring`.
 - The rerank prompt and schema add `they_give_you` / `you_give_them`.
@@ -189,6 +217,7 @@ You can send a connection request from a mentorship match using the Phase 5 flow
 **UI hint**: yes
 
 ### Phase 7: AI Profile Autofill
+
 **Goal**: A researcher can paste text or upload a PDF CV and have Gemini pre-fill the profile form, then review and edit it before saving. Manual entry always remains available.
 **Mode:** mvp
 **Depends on**: Phase 2 (independent of matching and connections)
@@ -198,16 +227,19 @@ You can send a connection request from a mentorship match using the Phase 5 flow
   2. A user uploads a PDF CV, and the form fills in the same way.
   3. Nothing is saved until the user reviews, edits and clicks Save. Leaving without saving leaves the stored profile unchanged.
   4. A rate limit, an unreadable or oversized file, or malformed AI output shows a clear message and leaves the form usable for manual entry.
+
 **Notes**:
 - **Cuttable:** this phase can be cut. If time slips, cut PDF (AUTO-02) first, then text (AUTO-01). Move anything cut to v2 and list it in the limitations document.
 - **Order:** it only depends on Phase 2, so it can start earlier or run in parallel if there is slack.
 - **PDF handling:** PDFs go inline with `types.Part.from_bytes`. pypdf is used only for pre-flight checks.
 - **Privacy:** disclose in the AI-use declaration that Google may use free-tier inputs, CVs included.
+
 **Docs capture**: paste-text autofill result, PDF autofill result, review-before-save form, failure message with manual fallback
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 8: Docs & Demo Readiness
+
 **Goal**: The project is ready to grade and demo. Every rubric document exists and matches the shipped app, and a rehearsed runbook makes the live demo dependable.
 **Mode:** mvp
 **Depends on**: Phase 6 (and Phase 7 if shipped)
@@ -231,6 +263,7 @@ You can send a connection request from a mentorship match using the Phase 5 flow
      - the AI inside the product and the AI used to build it
      - Google's use of free-tier Gemini inputs
   4. The pre-demo runbook (T-24h / T-2h / T-30min) has been run end to end in a live rehearsal: Streamlit app woken, Supabase confirmed active, demo login tested, and the demo account's peer and mentorship matches pre-warmed.
+
 **Notes**: Assemble the documents from the screenshots collected in each phase. Check that every document matches the code before submitting. If the GitHub cron hasn't run recently, confirm it is still enabled; GitHub disables scheduled workflows after 60 days without repo activity.
 **Docs capture**: final runbook checklist with rehearsal results
 **Plans**: TBD
