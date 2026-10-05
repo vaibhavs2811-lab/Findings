@@ -74,7 +74,7 @@ Requirements for the graded demo (~2026-10-19). Each maps to one roadmap phase.
 
 ### Deployment & Operations
 
-- [ ] **OPS-01**: The app is deployed on Streamlit Community Cloud on Python 3.12, with secrets set in the Cloud dashboard. No secrets are committed to the repo
+- [ ] **OPS-01**: The app is deployed on Streamlit Community Cloud on Python 3.12. By user decision (2026-10-05) `.streamlit/secrets.toml` with the Supabase URL + publishable key IS committed to the repo; the Supabase secret key must never be in it
 - [ ] ~~**OPS-02**~~: Dropped 2026-10-05 by user: no custom SMTP. Email confirmation is disabled in Supabase Auth instead (listed as a limitation)
 - [ ] **OPS-03**: A daily GitHub Actions workflow queries Supabase so the project never auto-pauses, and it can also be run manually
 - [ ] **OPS-04**: A pre-demo runbook exists and has been rehearsed. It covers waking the Streamlit app, confirming Supabase is active, testing the demo login, pre-warming the demo account's matches, and a live rehearsal
