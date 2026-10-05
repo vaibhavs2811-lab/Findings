@@ -204,8 +204,12 @@ Plans:
 - **Declines are final:** the unique-pair index makes a decline permanent. Record this in the limitations document.
 - **Phase gate:** a two-browser, two-account test of request, accept and email unlock.
 
-**Docs capture**: request dialog with note, duplicate-blocked message, incoming request accept/decline, email hidden before / visible after, synthetic auto-accept, Connections page tabs
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 05-01-PLAN.md — Connections Tracer, Schema Rules, Gated Email Unlock & Reset Probe (CONN-01..06) [wave 1]
+- [x] 05-02-PLAN.md — Connect on Discover Cards & My Matches with Connection Filtering (DISC-06, CONN-01, CONN-06) [wave 2]
+- [x] 05-03-PLAN.md — Phase 5 Polish: D-14 Incomplete Profile Guard & D-07 Reverse Request Acceptance (CONN-01, CONN-03, CONN-06) [wave 3]
 **UI hint**: yes
 
 ### Phase 6: Mentorship Mode

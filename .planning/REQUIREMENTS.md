@@ -40,15 +40,15 @@ Requirements for the graded demo (~2026-10-19). Each maps to one roadmap phase.
 - [x] **DISC-03**: User can filter cards by career stage
 - [x] **DISC-04**: User can search cards by interest keyword
 - [x] **DISC-05**: User can Skip a card, which hides it for the rest of the session
-- [ ] **DISC-06**: User can open a connection request directly from a card
+- [x] **DISC-06**: User can open a connection request directly from a card
 
 ### AI Matching (peer collaborators)
 
-- [ ] **MATCH-01**: User can open "My Matches" and see a ranked list of the best peer collaborators (excluding themselves and existing connections). Each match has a match-strength label and a "why you match" explanation that cites concrete details from both profiles
-- [ ] **MATCH-02**: Each profile's embedding (Gemini, 768-dim) is computed when the profile is saved, and only when its content changed. A pgvector search then shortlists the top ~15 candidates with no Gemini call
-- [ ] **MATCH-03**: One Gemini call reranks the shortlist with structured output. Methods complementarity (e.g. qual + quant for mixed methods) is considered, returned candidates are validated against the shortlist, and profile text is treated as untrusted input
-- [ ] **MATCH-04**: Match results are cached per user and mode, and reused until the user's profile changes or they click Refresh
-- [ ] **MATCH-05**: If Gemini fails or is rate-limited, the user still sees matches ranked by embedding similarity, with a visible notice instead of an error
+- [x] **MATCH-01**: User can open "My Matches" and see a ranked list of the best peer collaborators (excluding themselves and existing connections). Each match has a match-strength label and a "why you match" explanation that cites concrete details from both profiles
+- [x] **MATCH-02**: Each profile's embedding (Gemini, 768-dim) is computed when the profile is saved, and only when its content changed. A pgvector search then shortlists the top ~15 candidates with no Gemini call
+- [x] **MATCH-03**: One Gemini call reranks the shortlist with structured output. Methods complementarity (e.g. qual + quant for mixed methods) is considered, returned candidates are validated against the shortlist, and profile text is treated as untrusted input
+- [x] **MATCH-04**: Match results are cached per user and mode, and reused until the user's profile changes or they click Refresh
+- [x] **MATCH-05**: If Gemini fails or is rate-limited, the user still sees matches ranked by embedding similarity, with a visible notice instead of an error
 
 ### Mentorship Mode
 
@@ -59,12 +59,12 @@ Requirements for the graded demo (~2026-10-19). Each maps to one roadmap phase.
 
 ### Connections
 
-- [ ] **CONN-01**: User can send a connection request with a short note from a match, a card, or a profile page
-- [ ] **CONN-02**: User can see incoming pending requests and accept or decline each one
-- [ ] **CONN-03**: Only the recipient can accept or decline a request. A duplicate request between the same two people is blocked
-- [ ] **CONN-04**: Once a request is accepted, both users can see each other's contact email. Before that, the email can't be read by any query (enforced in the database, not just the UI)
-- [ ] **CONN-05**: User can see their sent, received, and accepted connections on a Connections page
-- [ ] **CONN-06**: A request sent to a synthetic profile is accepted automatically, revealing its example.org address, and is labelled as synthetic
+- [x] **CONN-01**: User can send a connection request with a short note from a match, a card, or a profile page
+- [x] **CONN-02**: User can see incoming pending requests and accept or decline each one
+- [x] **CONN-03**: Only the recipient can accept or decline a request. A duplicate request between the same two people is blocked
+- [x] **CONN-04**: Once a request is accepted, both users can see each other's contact email. Before that, the email can't be read by any query (enforced in the database, not just the UI)
+- [x] **CONN-05**: User can see their sent, received, and accepted connections on a Connections page
+- [x] **CONN-06**: A request sent to a synthetic profile is accepted automatically, revealing its example.org address, and is labelled as synthetic
 
 ### Seed Data
 
@@ -156,22 +156,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DISC-03 | Phase 3 | Complete |
 | DISC-04 | Phase 3 | Complete |
 | DISC-05 | Phase 3 | Complete |
-| DISC-06 | Phase 5 | Pending |
-| MATCH-01 | Phase 4 | Pending |
-| MATCH-02 | Phase 4 | Pending |
-| MATCH-03 | Phase 4 | Pending |
-| MATCH-04 | Phase 4 | Pending |
-| MATCH-05 | Phase 4 | Pending |
+| DISC-06 | Phase 5 | Complete |
+| MATCH-01 | Phase 4 | Complete |
+| MATCH-02 | Phase 4 | Complete |
+| MATCH-03 | Phase 4 | Complete |
+| MATCH-04 | Phase 4 | Complete |
+| MATCH-05 | Phase 4 | Complete |
 | MENT-01 | Phase 6 | Pending |
 | MENT-02 | Phase 6 | Pending |
 | MENT-03 | Phase 6 | Pending |
 | MENT-04 | Phase 6 | Pending |
-| CONN-01 | Phase 5 | Pending |
-| CONN-02 | Phase 5 | Pending |
-| CONN-03 | Phase 5 | Pending |
-| CONN-04 | Phase 5 | Pending |
-| CONN-05 | Phase 5 | Pending |
-| CONN-06 | Phase 5 | Pending |
+| CONN-01 | Phase 5 | Complete |
+| CONN-02 | Phase 5 | Complete |
+| CONN-03 | Phase 5 | Complete |
+| CONN-04 | Phase 5 | Complete |
+| CONN-05 | Phase 5 | Complete |
+| CONN-06 | Phase 5 | Complete |
 | DATA-01 | Phase 3 | Complete |
 | DATA-02 | Phase 3 | Complete |
 | DATA-03 | Phase 3 | Complete |

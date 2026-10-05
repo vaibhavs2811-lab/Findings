@@ -1,19 +1,18 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 4
-current_phase_name: AI Peer Matching
+current_phase: 5
+current_phase_name: Connections & Email Unlock
 status: complete
-stopped_at: Phase 4 complete (Plan 04-03 delivered; ready for Phase 5)
-last_updated: "2026-10-05T11:32:00.000Z"
+stopped_at: Phase 5 complete (Plans 05-01, 05-02, 05-03 delivered; ready for Phase 6 Mentorship Mode)
+last_updated: "2026-10-05T12:12:00.000Z"
 last_activity: 2026-10-05
-last_activity_desc: Phase 4 complete (Match caching, 4-rung fallback ladder, connections invalidation, anchor evaluation report)
-state_head: e058604905f46d42bbdca958fe472e1ac188d8ef
+last_activity_desc: Phase 5 complete (Connections tracer, Discover/Matches integration, email unlock, D-12 filter, D-14 guard, D-07 inline reverse accept)
 progress:
   total_phases: 8
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
-  percent: 50
+  completed_phases: 5
+  total_plans: 17
+  completed_plans: 17
+  percent: 62.5
 ---
 
 # Project State
@@ -23,16 +22,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-05)
 
 **Core value:** A signed-in researcher can open Findings and get a ranked list of AI-picked collaborators (or mentors/mentees), each with a believable "why you match" explanation, and then send one of them a connection request. This has to work live and reliably in the demo.
-**Current focus:** Phase 5 — Connections & Email Unlock
+**Current focus:** Phase 6 — Mentorship Mode
 
 ## Current Position
 
-Phase: 4 — AI Peer Matching (Complete)
-Plan: 04-03 complete, ready for Phase 5 (Connections & Email Unlock)
+Phase: 5 — Connections & Email Unlock (Complete)
+Plan: 05-01, 05-02, 05-03 complete, ready for Phase 6 (Mentorship Mode)
 Status: Complete
-Last activity: 2026-10-05 — Phase 4 complete (Match caching, 4-rung fallback ladder, connections invalidation, anchor evaluation report)
+Last activity: 2026-10-05 — Phase 5 complete (Connections tracer, Discover/Matches integration, email unlock, D-12 filter, D-14 guard, D-07 inline reverse accept)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 62.5%
 
 ## Performance Metrics
 

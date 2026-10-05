@@ -100,16 +100,19 @@ High-level architecture and logic flow for the Findings web application ("Hinge 
    - **UI & Controls:** `views/matches.py` renders candidate cards via `ui/cards.py`, showing match strength badges (`Strong match`, `Good match`, `Possible match`), methods badges, and `Refresh matches` with a 60-second session cooldown.
    - **Evaluation & Verification:** `scripts/eval_anchors.py` evaluates 6 synthetic anchors across `methods_effective` × `stage_tier`, confirming prompt injection resistance (canary token probe) and similarity threshold alignment (`docs/eval/anchor-top3.md`).
 
-6. **Connections & Email Unlock Flow (Phase 5 Active / Tracer Delivered)**
-   - **Connection Actions & Note Dialog:** `ui/connect_button.py` provides modal request dialog (`@st.dialog`) with 500-char note input and live status chips (`Request sent`, `Connected`, `Not available`, `They sent you a request`). Embedded on researcher profile view (`views/researcher.py`).
-   - **Database Gating & Security:**
-     - Insert permissions restricted to `(requester_id, recipient_id, note)` on `public.connections`.
+6. **Connections & Email Unlock Flow (Phase 5 Delivered)**
+   - **Connection Actions & Note Dialog:** `ui/connect_button.py` provides modal request dialog (`@st.dialog`) with 500-char note input and live status chips (`Request sent`, `Connected`, `Not available`). Embedded on researcher profile view (`views/researcher.py`), Discover cards (`views/discover.py`, `ui/cards.py`), and My Matches entries (`views/matches.py`).
+   - **Inline Reverse Request Acceptance (D-07):** If a recipient researcher views someone who already requested to connect, the button becomes `"Accept their request"` (primary) and accepts inline without navigating away.
+   - **Incomplete Profile Guard (D-14):** Users with incomplete profiles (`is_complete = False`) are blocked from sending connection requests with a friendly prompt.
+   - **Dynamic Match Filtering (D-12):** My Matches filters out candidates with any existing connection (`sent`, `received`, `connected`, `declined`) on render, ensuring cached match results never show existing connections.
+   - **Database Gating & Privacy:**
+     - Insert permissions restricted strictly to `(requester_id, recipient_id, note)` on `public.connections`.
      - `auto_accept_synthetic` trigger: security-definer trigger automatically marks connections to synthetic researchers as `accepted` on insert.
      - `my_connections()` security-definer RPC: retrieves user connections (`sent`, `received`, `accepted`), where `other_email` is revealed strictly through `get_contact_email(other_id)` only after mutual acceptance.
    - **Connections Management View:** `views/connections.py` renders tabbed view (`Received`, `Sent`, `Connected`). Unlocks and displays mutual contact email via `st.code` without HTML injection.
    - **Reset & Verification:** `scripts/reset_connections.py` resets demo and probe connection rows; `scripts/check_live.py` implements live probes C0-C14.
 
 7. **Mentorship Matching Mode (Phase 6 Next)**
-   - Extends matching mode to `mentor` using existing pgvector RPC, stage filtering, and mentorship badges.
+   - Extends matching mode to `mentor` using give/need exchange scoring, mentorship explanations, and reciprocal offer/needs fit.
 
 
