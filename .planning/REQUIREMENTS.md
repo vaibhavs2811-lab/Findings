@@ -9,8 +9,8 @@ Requirements for the graded demo (~2026-10-19). Each maps to one roadmap phase.
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can request a 6-digit sign-in code by email and sign in by typing it into the app. This works for any email address because custom SMTP (Brevo) is configured
-- [ ] **AUTH-02**: A first-time user's account is created automatically on their first successful code sign-in, for both the "new user" and "returning user" email templates
+- [ ] **AUTH-01**: User can create an account and sign in with email + password (changed 2026-10-05 by user: no email codes, no Brevo SMTP; Supabase "Confirm email" is turned off so sign-up works without sending mail)
+- [ ] **AUTH-02**: A first-time user creates their account from the sign-in page (Sign up tab) and is signed in straight away; a returning user signs in with the same email + password
 - [ ] **AUTH-03**: A pre-made demo account can sign in with email + password, so the live demo never depends on an inbox
 - [ ] **AUTH-04**: User stays signed in after a browser refresh (cookie-based session restore)
 - [ ] **AUTH-05**: User can sign out from any page
@@ -75,7 +75,7 @@ Requirements for the graded demo (~2026-10-19). Each maps to one roadmap phase.
 ### Deployment & Operations
 
 - [ ] **OPS-01**: The app is deployed on Streamlit Community Cloud on Python 3.12, with secrets set in the Cloud dashboard. No secrets are committed to the repo
-- [ ] **OPS-02**: Custom SMTP is configured, and both Supabase email templates send the 6-digit code
+- [ ] ~~**OPS-02**~~: Dropped 2026-10-05 by user: no custom SMTP. Email confirmation is disabled in Supabase Auth instead (listed as a limitation)
 - [ ] **OPS-03**: A daily GitHub Actions workflow queries Supabase so the project never auto-pauses, and it can also be run manually
 - [ ] **OPS-04**: A pre-demo runbook exists and has been rehearsed. It covers waking the Streamlit app, confirming Supabase is active, testing the demo login, pre-warming the demo account's matches, and a live rehearsal
 
