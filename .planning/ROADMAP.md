@@ -70,7 +70,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   - **Deploy:** choose Python 3.12 in Advanced settings on the first deploy. It can't be changed later.
 
 **Docs capture**: sign-in screen, code entry, signed-in landing page, demo-password login, green keep-alive workflow run
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 
 Plans:
 **Wave 1**
@@ -78,7 +78,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-02-PLAN.md — Full schema + RLS applied live, demo password login, own profile record on Home (wave 2)
-- [ ] 01-03-PLAN.md — Refresh-token cookie restore, sign-out from every page, session isolation tests (wave 2)
+- [x] 01-03-PLAN.md — Refresh-token cookie restore, sign-out from every page, session isolation tests (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 01-04-PLAN.md — Keep-alive workflow, Streamlit Cloud deploy on Python 3.12, Gemini quotas, deployed exit checks (wave 3)
@@ -275,7 +275,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Sign-in | 1/4 | In Progress|  |
+| 1. Foundation & Sign-in | 2/4 | In Progress|  |
 | 2. Researcher Profiles | 0/TBD | Not started | - |
 | 3. Researcher Pool & Discover | 0/TBD | Not started | - |
 | 4. AI Peer Matching | 0/TBD | Not started | - |
