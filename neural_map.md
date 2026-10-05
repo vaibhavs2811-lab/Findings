@@ -87,7 +87,20 @@ High-level architecture and logic flow for the Findings web application ("Hinge 
    - **Discover Grid:** `views/discover.py` queries `list_public` with indexed filters (`methods_effective`, `career_stage`, keyword interest search, completed only). Cards rendered via `ui/cards.py` with `Synthetic` badge, methods badge, top interests, and 1-click Skip (session-isolated).
    - **Public Profile View:** `views/researcher.py` displays full public details; strictly suppresses contact email (`show_email=False`).
 
-5. **AI Peer Matching & Shortlisting Flow (Phase 4 Active)**
-   - pgvector RPC `match_profiles(query_vector, mode, k=15)` finds cosine nearest neighbors excluding self and existing connections.
-   - Gemini reranks candidates with grounded explanations citing mutual interests and methods complementarity.
-   - Caching layer avoids re-computation until profile changes; graceful fallback to embedding-only rank if Gemini is unavailable.
+5. **AI Peer Matching & Reranking Flow (Phase 4 Delivered)**
+   - **Shortlisting & RPC:** `match_profiles` server-side pgvector RPC (`security invoker`) retrieves cosine nearest neighbors in `profiles.embedding` (768-dim) excluding self and active/pending connections from `connections`.
+   - **Embedding Synchronization:** `findings/services/profile_service.py` hooks `ensure_embedding` on save. If research profile hash changes, generates new normalized embedding via `gemini-embedding-2` without exposing private columns to Python.
+   - **Structured Gemini Reranker:** `findings/ai/rerank.py` maps candidates to privacy-safe ephemeral IDs `c1..cN` (suppressing names, emails, institutions). Single structured LLM call scores candidates (0-100) and produces concise explanations (<280 chars) highlighting shared interests and methods complementarity.
+   - **Grounding & Cross-Candidate Leakage Guard:** `validate_why` checks token grounding and blocks cross-candidate foreign terms of >=5 chars not present in either profile. Omitted candidates are safely appended.
+   - **4-Rung Fallback Ladder:**
+     1. Fresh cache: `match_cache` keyed by `(user_id, mode)` with sha256 profile hash (`source='ai'` no TTL; `source='embedding'` 10 min TTL).
+     2. Live AI rerank: updates cache on success.
+     3. Stale AI cache: reuses prior AI matches if live AI fails, with user notification.
+     4. Embedding-only fallback: falls back to raw vector similarity order with template explanations and non-blocking warning notice.
+   - **UI & Controls:** `views/matches.py` renders candidate cards via `ui/cards.py`, showing match strength badges (`Strong match`, `Good match`, `Possible match`), methods badges, and `Refresh matches` with a 60-second session cooldown.
+   - **Evaluation & Verification:** `scripts/eval_anchors.py` evaluates 6 synthetic anchors across `methods_effective` × `stage_tier`, confirming prompt injection resistance (canary token probe) and similarity threshold alignment (`docs/eval/anchor-top3.md`).
+
+6. **Connections & Email Unlock Flow (Phase 5 Next)**
+   - Researcher sends connection request with note; mutual acceptance reveals contact emails via security-definer RPC `get_contact_email(other_id)`.
+   - Synthetic profiles auto-accepted via server-side trigger.
+

@@ -2,18 +2,18 @@
 gsd_state_version: "1.0"
 current_phase: 4
 current_phase_name: AI Peer Matching
-status: in_progress
-stopped_at: Plan 04-01 complete (Base AI Peer Matching Tracer & Embedding-on-Save)
-last_updated: "2026-10-05T11:15:00.000Z"
+status: complete
+stopped_at: Phase 4 complete (Plan 04-03 delivered; ready for Phase 5)
+last_updated: "2026-10-05T11:32:00.000Z"
 last_activity: 2026-10-05
-last_activity_desc: Plan 04-01 complete (pgvector shortlist RPC, matching service, My Matches UI, embed on save)
+last_activity_desc: Phase 4 complete (Match caching, 4-rung fallback ladder, connections invalidation, anchor evaluation report)
 state_head: e058604905f46d42bbdca958fe472e1ac188d8ef
 progress:
   total_phases: 8
-  completed_phases: 3
-  total_plans: 12
-  completed_plans: 11
-  percent: 42
+  completed_phases: 4
+  total_plans: 14
+  completed_plans: 14
+  percent: 50
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-05)
 
 **Core value:** A signed-in researcher can open Findings and get a ranked list of AI-picked collaborators (or mentors/mentees), each with a believable "why you match" explanation, and then send one of them a connection request. This has to work live and reliably in the demo.
-**Current focus:** Phase 4 — AI Peer Matching
+**Current focus:** Phase 5 — Connections & Email Unlock
 
 ## Current Position
 
-Phase: 4 — AI Peer Matching
-Plan: 04-01 complete, ready for 04-02 (Gemini Rerank with Grounded Explanations)
-Status: In progress
-Last activity: 2026-10-05 — Plan 04-01 complete (Base AI Peer Matching Tracer & Embedding-on-Save)
+Phase: 4 — AI Peer Matching (Complete)
+Plan: 04-03 complete, ready for Phase 5 (Connections & Email Unlock)
+Status: Complete
+Last activity: 2026-10-05 — Phase 4 complete (Match caching, 4-rung fallback ladder, connections invalidation, anchor evaluation report)
 
-Progress: [████░░░░░░] 42%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 

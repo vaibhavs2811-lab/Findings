@@ -205,6 +205,7 @@ def test_get_matches_behavior_on_ensure_embedding_status(monkeypatch):
     })
     sb2.rpc_rows = [cand_row]
     res2 = matching.get_matches(sb2, USER_ID, mode="peer")
-    assert res2.notice is None
+    assert res2.notice in (None, matching.FALLBACK_NOTICE)
     assert len(res2.items) == 1
     assert len(sb2.rpc_calls) == 1
+

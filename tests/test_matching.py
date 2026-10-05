@@ -130,12 +130,59 @@ def test_match_profiles_repo_call():
     assert "query_embedding" not in params
 
 
-def test_get_matches_preserves_order_and_strengths():
+def test_get_matches_ai_rerank_success(monkeypatch):
     fake = FakeMatchingSupabase(initial_profile=_make_own_profile(complete=True))
     fake.rpc_rows = _make_rpc_rows()
 
+    # Mock successful AI rerank
+    from findings.ai import rerank
+    mock_ai_items = [
+        {
+            "id": CAND2_ID,
+            "full_name": "Bob Synth",
+            "career_stage": "PhD",
+            "methods_effective": "qualitative",
+            "interests": ["HCI"],
+            "is_synthetic": True,
+            "similarity": 0.66,
+            "score": 95,
+            "strength": "Strong match",
+            "why": "AI grounded explanation.",
+            "why_source": "ai",
+        },
+        {
+            "id": CAND1_ID,
+            "full_name": "Dr. Alice Smith",
+            "career_stage": "Postdoc",
+            "methods_effective": "quantitative",
+            "interests": ["Robotics"],
+            "is_synthetic": False,
+            "similarity": 0.82,
+            "score": 85,
+            "strength": "Strong match",
+            "why": "AI grounded explanation 2.",
+            "why_source": "ai",
+        },
+    ]
+    monkeypatch.setattr(rerank, "rerank_candidates", lambda _me, _cands: mock_ai_items)
+
     res = get_matches(fake, USER_ID, mode="peer")
     assert res.notice is None
+    assert res.source == "ai"
+    assert len(res.items) == 2
+    assert res.items[0]["id"] == CAND2_ID
+
+
+def test_get_matches_fallback_to_embedding_order(monkeypatch):
+    fake = FakeMatchingSupabase(initial_profile=_make_own_profile(complete=True))
+    fake.rpc_rows = _make_rpc_rows()
+
+    # Force fallback
+    monkeypatch.setenv("FINDINGS_FORCE_AI_FALLBACK", "1")
+
+    from findings.services.matching import FALLBACK_NOTICE
+    res = get_matches(fake, USER_ID, mode="peer")
+    assert res.notice == FALLBACK_NOTICE
     assert res.source == "embedding"
     assert len(res.items) == 3
 
@@ -255,3 +302,39 @@ def test_app_test_my_matches_view():
 
     caption_values = [c.value for c in at.caption]
     assert any("Ranked by profile similarity" in c for c in caption_values)
+
+
+def test_app_test_my_matches_ai_ranked_caption(monkeypatch):
+    fake = FakeMatchingSupabase(initial_profile=_make_own_profile(complete=True))
+    fake.rpc_rows = _make_rpc_rows()
+
+    from findings.ai import rerank
+    mock_ai_items = [
+        {
+            "id": CAND1_ID,
+            "full_name": "Dr. Alice Smith",
+            "career_stage": "Postdoc",
+            "methods_effective": "quantitative",
+            "interests": ["Robotics"],
+            "is_synthetic": False,
+            "similarity": 0.82,
+            "score": 90,
+            "strength": "Strong match",
+            "why": "AI grounded explanation.",
+            "why_source": "ai",
+        }
+    ]
+    monkeypatch.setattr(rerank, "rerank_candidates", lambda _me, _cands: mock_ai_items)
+
+    fake.auth._store("test@example.org")
+    at = AppTest.from_file(APP, default_timeout=15)
+    at.secrets.update(SECRETS)
+    at.session_state["sb"] = fake
+    at.session_state["user"] = {"id": USER_ID, "email": "test@example.org"}
+    at.run()
+    at.switch_page("views/matches.py").run()
+
+    assert not at.exception
+    caption_values = [c.value for c in at.caption]
+    assert any("AI-ranked" in c for c in caption_values)
+

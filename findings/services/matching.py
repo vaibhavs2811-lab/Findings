@@ -7,6 +7,7 @@ grounded match explanations with methods complementarity.
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -32,6 +33,11 @@ UNAVAILABLE_NOTICE = (
 EMBED_FAILED_NOTICE = (
     "Unable to compute your profile embedding at this time. Please try again shortly or browse Discover."
 )
+FALLBACK_NOTICE = (
+    "AI explanations are unavailable right now, so these matches are ranked by profile similarity."
+)
+STALE_AI_NOTICE = "Showing your last AI matches. They may not reflect recent profile changes."
+EMBEDDING_CACHE_TTL_SECONDS = 600
 
 
 @dataclass
@@ -204,11 +210,53 @@ def get_matches(
     if embed_status == "failed":
         return MatchResult(items=[], source="embedding", notice=EMBED_FAILED_NOTICE)
 
+    from findings.repos import matches as matches_repo
+
+    connected_ids = matches_repo.get_connected_profile_ids(sb, user_id)
+    match_key = matches_repo.compute_match_key(me, mode)
+
+    force_fallback = os.environ.get("FINDINGS_FORCE_AI_FALLBACK") == "1"
+
+    # Rung 1: Fresh cache check (skip if refresh=True or forced fallback)
+    if not refresh and not force_fallback:
+        cached = matches_repo.get_cached_matches(sb, user_id, mode)
+        if cached:
+            c_key = cached.get("profile_hash")
+            c_source = cached.get("source") or "embedding"
+            c_rows = cached.get("results") or []
+            c_created = cached.get("created_at")
+
+            if c_key == match_key:
+                fresh_items = [item for item in c_rows if str(item.get("id")) not in connected_ids]
+                if c_source == "ai" and fresh_items:
+                    return MatchResult(
+                        items=fresh_items,
+                        source="ai",
+                        notice=None,
+                        from_cache=True,
+                        computed_at=c_created,
+                    )
+                if c_source == "embedding" and fresh_items and c_created:
+                    try:
+                        dt = datetime.fromisoformat(str(c_created).replace("Z", "+00:00"))
+                        age = (datetime.now(timezone.utc) - dt).total_seconds()
+                    except Exception:
+                        age = 999999
+                    if age <= EMBEDDING_CACHE_TTL_SECONDS:
+                        return MatchResult(
+                            items=fresh_items,
+                            source="embedding",
+                            notice=FALLBACK_NOTICE,
+                            from_cache=True,
+                            computed_at=c_created,
+                        )
+
+    # Rung 2: Live AI path
     try:
         rows = profiles.match_profiles(
             sb,
             match_count=SHORTLIST_SIZE,
-            exclude_ids=[user_id],
+            exclude_ids=list({user_id} | connected_ids),
             mode=mode,
         )
     except Exception as exc:
@@ -218,13 +266,44 @@ def get_matches(
     if not rows:
         return MatchResult(items=[], source="embedding", notice=NO_MATCHES_NOTICE)
 
-    items = [
-        to_item(row, me)
-        for row in rows
-        if str(row.get("id")) != str(user_id)
+    candidates = [
+        row for row in rows
+        if str(row.get("id")) != str(user_id) and str(row.get("id")) not in connected_ids
     ]
 
-    if not items:
+    if not candidates:
         return MatchResult(items=[], source="embedding", notice=NO_MATCHES_NOTICE)
 
-    return MatchResult(items=items, source="embedding", notice=None)
+    try:
+        from findings.ai import rerank
+        ai_items = rerank.rerank_candidates(me, candidates)
+        if not force_fallback:
+            matches_repo.upsert_cached_matches(
+                sb, user_id, mode, match_key, source="ai", results=ai_items
+            )
+        return MatchResult(items=ai_items, source="ai", notice=None, from_cache=False)
+    except Exception as exc:
+        logger.warning("AI rerank failed (%s); checking stale cache or embedding fallback", type(exc).__name__)
+
+    # Rung 3: Stale AI cache fallback (skipped if forced fallback)
+    if not force_fallback:
+        stale_cached = matches_repo.get_cached_matches(sb, user_id, mode)
+        if stale_cached and stale_cached.get("source") == "ai":
+            stale_rows = stale_cached.get("results") or []
+            stale_items = [item for item in stale_rows if str(item.get("id")) not in connected_ids]
+            if stale_items:
+                return MatchResult(
+                    items=stale_items,
+                    source="ai",
+                    notice=STALE_AI_NOTICE,
+                    from_cache=True,
+                    computed_at=stale_cached.get("created_at"),
+                )
+
+    # Rung 4: Embedding-only fallback
+    emb_items = [to_item(row, me) for row in candidates]
+    if not force_fallback:
+        matches_repo.upsert_cached_matches(
+            sb, user_id, mode, match_key, source="embedding", results=emb_items
+        )
+    return MatchResult(items=emb_items, source="embedding", notice=FALLBACK_NOTICE, from_cache=False)

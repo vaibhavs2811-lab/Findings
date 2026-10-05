@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import streamlit as st
@@ -64,6 +65,18 @@ def _render_match(item: dict[str, Any], rank: int) -> None:
         )
 
 
+def _on_refresh_click() -> None:
+    now = time.time()
+    last = st.session_state.get("matches_last_refreshed", 0.0)
+    if now - last < 60:
+        wait_secs = int(60 - (now - last))
+        st.toast(f"Please wait {wait_secs}s before refreshing matches.", icon="⏳")
+    else:
+        st.session_state["matches_last_refreshed"] = now
+        st.session_state["matches_force_refresh"] = True
+        st.rerun()
+
+
 def render_matches_page() -> None:
     """Render My Matches page with shortlisted peer collaborators."""
     st.title("My Matches")
@@ -76,17 +89,31 @@ def render_matches_page() -> None:
         st.info("Please sign in to view your matches.")
         return
 
+    force_refresh = st.session_state.pop("matches_force_refresh", False)
+
     with st.spinner("Finding peer collaborators..."):
-        result = matching.get_matches(sb, user_id, mode="peer")
+        result = matching.get_matches(sb, user_id, mode="peer", refresh=force_refresh)
 
     if result.notice:
         st.info(result.notice)
         if result.notice == matching.INCOMPLETE_NOTICE:
             st.page_link("views/profile.py", label="Complete your profile", icon=":material/edit:")
-        return
+        if not result.items:
+            return
 
-    caption_text = "AI-ranked" if result.source == "ai" else "Ranked by profile similarity"
-    st.caption(caption_text)
+    col_cap, col_ref = st.columns([4, 1])
+    with col_cap:
+        caption_text = "AI-ranked" if result.source == "ai" else "Ranked by profile similarity"
+        if result.from_cache:
+            caption_text += " (cached)"
+        st.caption(caption_text)
+    with col_ref:
+        st.button(
+            "Refresh matches",
+            key="btn_refresh_matches",
+            on_click=_on_refresh_click,
+            help="Recompute matches and bypass cache (60s cooldown)",
+        )
 
     if not result.items:
         st.info(matching.NO_MATCHES_NOTICE)

@@ -177,8 +177,12 @@ Plans:
   - Spot-check for hallucinations.
   - Build an anchor-profile evaluation set (hand-checked top 3) for the test report.
 
-**Docs capture**: My Matches list with explanations, Refresh, cached reload, forced-fallback notice, anchor-profile top-3 evaluation
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 04-01-PLAN.md — Base AI Peer Matching Tracer & Embedding-on-Save (MATCH-01 base, MATCH-02) [wave 1]
+- [x] 04-02-PLAN.md — Structured Gemini Rerank & Grounded Explanations (MATCH-01, MATCH-03, MATCH-05) [wave 2]
+- [x] 04-03-PLAN.md — Match Caching, Connections Invalidation, 4-Rung Fallback Ladder & Evaluation (MATCH-01, MATCH-04, MATCH-05) [wave 3]
 **UI hint**: yes
 
 ### Phase 5: Connections & Email Unlock
