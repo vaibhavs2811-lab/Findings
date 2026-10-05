@@ -134,7 +134,7 @@ def main() -> int:
     run_anon(url, key)
     email, password = demo_credentials()
     if not (email and password):
-        print("SKIP D1-D10: demo credentials missing (set scripts/local.toml or env vars)")
+        print("SKIP: no demo credentials, D1-D10 not run (set scripts/local.toml or env vars)")
         print(f"{RESULTS['passed']} passed, {RESULTS['failed']} failed")
         return 2
     run_demo(url, key, email, password)
