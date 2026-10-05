@@ -12,6 +12,8 @@ from typing import Any
 
 import streamlit as st
 
+from ui.icons import icon_css, icon_svg
+
 _CSS_PATH = Path(__file__).with_name("theme.css")
 
 _AVATAR_GRADIENTS = (
@@ -38,7 +40,7 @@ def inject_theme() -> None:
         css = _CSS_PATH.read_text(encoding="utf-8")
     except OSError:
         return
-    st.html(f"<style>{css}</style>")
+    st.html(f"<style>{css}{icon_css()}</style>")
 
 
 # ---------- Pure helpers ----------
@@ -90,9 +92,11 @@ def avatar_html(name: str | None, size: int = 46) -> str:
     )
 
 
-def pill_html(text: str, tone: str = "gray", icon: str = "") -> str:
+def pill_html(text: str, tone: str = "gray", icon: str = "", *, svg: str = "") -> str:
+    """Pill badge. `svg` is trusted inline markup from ui.icons; `icon` is escaped text."""
     tone = tone if tone in TONES else "gray"
-    return f'<span class="fx-pill {tone}">{esc(icon)} {esc(text)}</span>'.replace("> ", ">", 1)
+    lead = svg or esc(icon)
+    return f'<span class="fx-pill {tone}">{lead}{" " if lead else ""}{esc(text)}</span>'
 
 
 def pills_html(pills: list[tuple[str, str]]) -> str:
@@ -132,8 +136,9 @@ def section_header(title: str, subtitle: str | None = None) -> None:
 
 
 def empty_state(icon: str, title: str, body: str) -> None:
+    """`icon` is a name from ui.icons."""
     st.html(
-        f'<div class="fx-empty"><div class="i">{esc(icon)}</div>'
+        f'<div class="fx-empty"><div class="i">{icon_svg(icon, 28)}</div>'
         f'<div class="t">{esc(title)}</div><div class="b">{esc(body)}</div></div>'
     )
 

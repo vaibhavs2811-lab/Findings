@@ -17,7 +17,7 @@ def show_connect_flash() -> None:
     """Display pending connect action toast notification if present."""
     flash = st.session_state.pop("connect_flash", None)
     if flash:
-        st.toast(flash, icon="✉️")
+        st.toast(flash, icon=":material/mail:")
 
 
 def _close(*args: Any, **kwargs: Any) -> None:

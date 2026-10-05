@@ -4,6 +4,7 @@ from findings.core import session
 from findings.services import auth_service
 from findings.services.auth_service import AuthFailure
 from ui.components import brand_html
+from ui.icons import icon_svg
 
 # The sidebar adds nothing before sign-in; give the page the full width.
 st.html("<style>[data-testid='stSidebar'],[data-testid='stSidebarCollapsedControl'],[data-testid='stExpandSidebarButton']{display:none}</style>")
@@ -21,11 +22,11 @@ with left:
         + '<div class="fx-lead">Findings matches researchers on topics, methods and goals, '
         + "explains every match, and pairs junior researchers with mentors so both sides gain.</div>"
         + '<div style="height:1rem"></div>'
-        + '<div class="fx-feature"><div class="ic">✨</div><div><div class="tt">AI-ranked matches</div>'
+        + '<div class="fx-feature"><div class="ic">' + icon_svg("sparkles", 20) + '</div><div><div class="tt">AI-ranked matches</div>'
         + '<div class="dd">A short, honest reason for every suggestion.</div></div></div>'
-        + '<div class="fx-feature"><div class="ic">🎓</div><div><div class="tt">Mentorship both ways</div>'
+        + '<div class="fx-feature"><div class="ic">' + icon_svg("graduation", 20) + '</div><div><div class="tt">Mentorship both ways</div>'
         + '<div class="dd">Juniors learn how research is done; mentors get skilled help.</div></div></div>'
-        + '<div class="fx-feature"><div class="ic">🔒</div><div><div class="tt">Private until you both agree</div>'
+        + '<div class="fx-feature"><div class="ic">' + icon_svg("lock", 20) + '</div><div><div class="tt">Private until you both agree</div>'
         + '<div class="dd">Contact email is revealed only after a request is accepted.</div></div></div>'
     )
 with right, st.container(key="fxpanel-signin"):

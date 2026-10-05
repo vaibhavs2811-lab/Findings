@@ -141,12 +141,13 @@ def mentoring_pills(profile: dict | None) -> str:
 def match_header_html(item: dict, rank: int) -> str:
     """Header for a My Matches card: avatar, name, stage, pills and score ring."""
     from ui.components import avatar_html, chips_html, esc, pill_html, ring_html
+    from ui.icons import icon_svg
 
     name = item.get("full_name") or "Unnamed researcher"
     strength = item.get("strength") or "Possible match"
     tone = {"Strong match": "green", "Good match": "cyan"}.get(strength, "amber")
     stage = item.get("career_stage") or ""
-    ai = pill_html("AI explained", "violet", "✨") if item.get("why_source") == "ai" else ""
+    ai = pill_html("AI explained", "violet", svg=icon_svg("sparkles", 12)) if item.get("why_source") == "ai" else ""
     score = item.get("score")
     if score is None:
         score = round(float(item.get("similarity") or 0) * 100)

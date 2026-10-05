@@ -9,6 +9,7 @@ import streamlit as st
 from findings.core.session import current_user
 from findings.services import connection_service
 from ui.components import avatar_html, empty_state, pill_html
+from ui.icons import icon_svg
 
 
 def _handle_response(
@@ -87,7 +88,7 @@ def render_connections_page() -> None:
 
     with tab_rec:
         if not received:
-            empty_state("📥", "No incoming requests", "When someone wants to connect, their request shows up here.")
+            empty_state("inbox", "No incoming requests", "When someone wants to connect, their request shows up here.")
         else:
             for item in received:
                 cid = str(item.get("connection_id") or "")
@@ -118,7 +119,7 @@ def render_connections_page() -> None:
 
     with tab_sent:
         if not sent:
-            empty_state("📤", "No sent requests", "Requests you send from Discover or My Matches appear here.")
+            empty_state("send", "No sent requests", "Requests you send from Discover or My Matches appear here.")
         else:
             for item in sent:
                 other_name = item.get("other_name") or "Unnamed researcher"
@@ -137,7 +138,7 @@ def render_connections_page() -> None:
     with tab_conn:
         if not connected:
             empty_state(
-                "🤝",
+                "handshake",
                 "No connections yet",
                 "Connect with researchers on Discover or My Matches. Their email appears here once they accept.",
             )
@@ -150,7 +151,7 @@ def render_connections_page() -> None:
                 with st.container(border=True, key=f"fxcard-conn-ok-{item.get('connection_id')}"):
                     _person_header(other_name, other_stage, pill_html("Connected", "green"))
                     if other_email:
-                        st.html('<div class="fx-email">✉️ Contact email unlocked</div>')
+                        st.html(f'<div class="fx-email">{icon_svg("mail", 18)} Contact email unlocked</div>')
                         st.code(other_email, language="")
                     else:
                         st.html('<div class="fx-email locked">Email unavailable</div>')

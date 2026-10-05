@@ -96,7 +96,7 @@ def _on_refresh_click(mode: str = "peer") -> None:
     last = st.session_state.get(key, 0.0)
     if now - last < 60:
         wait_secs = int(60 - (now - last))
-        st.toast(f"Please wait {wait_secs}s before refreshing matches.", icon="⏳")
+        st.toast(f"Please wait {wait_secs}s before refreshing matches.", icon=":material/schedule:")
     else:
         st.session_state[key] = now
         st.session_state["matches_force_refresh"] = True

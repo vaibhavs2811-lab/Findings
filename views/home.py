@@ -11,6 +11,7 @@ from ui.components import (
     pill_html,
     section_header,
 )
+from ui.icons import icon_svg
 
 user = session.current_user() or {}
 sb = st.session_state["sb"]
@@ -91,15 +92,15 @@ for col, (value, label) in zip(stats, tiles, strict=True):
 section_header("Jump back in")
 c1, c2, c3 = st.columns(3)
 with c1.container(key="fxtile-act-matches"):
-    st.html('<div class="fx-tile-icon">🤝</div><div class="fx-tile-title">My Matches</div>')
+    st.html(f'<div class="fx-tile-icon">{icon_svg("handshake", 22)}</div><div class="fx-tile-title">My Matches</div>')
     st.caption("AI-ranked collaborators and mentors, with a reason for each.")
     st.page_link("views/matches.py", label="See my matches", icon=":material/arrow_forward:")
 with c2.container(key="fxtile-act-discover"):
-    st.html('<div class="fx-tile-icon">🔭</div><div class="fx-tile-title">Discover</div>')
+    st.html(f'<div class="fx-tile-icon">{icon_svg("compass", 22)}</div><div class="fx-tile-title">Discover</div>')
     st.caption("Browse, filter and search researchers across fields.")
     st.page_link("views/discover.py", label="Browse researchers", icon=":material/arrow_forward:")
 with c3.container(key="fxtile-act-connections"):
-    st.html('<div class="fx-tile-icon">💬</div><div class="fx-tile-title">Connections</div>')
+    st.html(f'<div class="fx-tile-icon">{icon_svg("message", 22)}</div><div class="fx-tile-title">Connections</div>')
     st.caption(f"{pending} request(s) waiting for you." if pending else "Requests you sent and received.")
     st.page_link("views/connections.py", label="Open connections", icon=":material/arrow_forward:")
 

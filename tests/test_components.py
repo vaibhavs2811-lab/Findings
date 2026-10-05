@@ -111,3 +111,35 @@ def test_theme_is_injected_on_every_page():
     at.run()
     assert any("--fx-violet" in (e.proto.body or "") for e in at.get("html"))
     assert any("fx-brand-name" in (e.proto.body or "") for e in at.get("html"))
+
+
+def test_icons_are_css_masks_without_scripts_or_external_urls():
+    from ui.icons import _PATHS, icon_css, icon_svg
+
+    assert icon_svg("nope") == ""
+    css = icon_css()
+    for name in _PATHS:
+        el = icon_svg(name, 24)
+        assert f"fx-ico-{name}" in el and "width:24px" in el and "<svg" not in el
+        assert f".fx-ico-{name}" in css
+    assert "<script" not in css.lower() and "javascript:" not in css.lower()
+    assert "http%3A" not in css.replace("http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg", "")
+
+
+def test_pill_accepts_trusted_svg_but_still_escapes_text():
+    from ui.icons import icon_svg
+
+    html = pill_html("<b>x</b>", "violet", svg=icon_svg("sparkles", 12))
+    assert "fx-ico-sparkles" in html and "<b>" not in html and "&lt;b&gt;" in html
+
+
+def test_no_emoji_in_ui_source():
+    import pathlib
+
+    allowed = set("·–—…→’‘“”é")
+    root = pathlib.Path(__file__).resolve().parent.parent
+    files = [*root.glob("views/*.py"), *root.glob("ui/*.py"), root / "app.py"]
+    offenders = [
+        f.name for f in files if any(ord(c) > 127 and c not in allowed for c in f.read_text(encoding="utf-8"))
+    ]
+    assert offenders == []

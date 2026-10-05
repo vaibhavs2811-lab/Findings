@@ -339,3 +339,12 @@ h1 { padding-top: 0.25rem !important; }
 }
 [class*="st-key-fxcard-"] [data-testid="stButton"], [class*="st-key-fxcard-"] [data-testid="stPageLink"] { width: 100%; }
 [class*="st-key-fxcard-"] .fx-pills:empty { display: none; }
+
+/* ---------- Icons ---------- */
+.fx-tile-icon, .fx-feature .ic, .fx-empty .i { color: var(--fx-violet-2); }
+.fx-empty .i {
+  width: 60px; height: 60px; margin: 0 auto 0.4rem; border-radius: 18px; display: grid; place-items: center;
+  background: rgba(124, 92, 255, 0.16); border: 1px solid rgba(124, 92, 255, 0.4);
+}
+.fx-email { color: #6ee7b7; }
+.fx-email .fx-ico { margin-right: 0.1rem; }
