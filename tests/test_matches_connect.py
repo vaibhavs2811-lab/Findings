@@ -9,6 +9,7 @@ from streamlit.testing.v1 import AppTest
 
 from findings.services import connection_service, matching
 from tests.fakes_connections import ConnectionsFake, ConnectionStore
+from tests.uihelp import text_like
 
 APP = str(Path(__file__).resolve().parent.parent / "app.py")
 SECRETS = {
@@ -82,7 +83,7 @@ def test_matches_connect_flow(monkeypatch):
 
     # Per D-12: candidate is now connected (status='pending') and must be dropped from rendered matches
     at.run()
-    text_vals = [t.value for t in at.text]
+    text_vals = [t.value for t in text_like(at)]
     assert not any("Dr. Match One" in t for t in text_vals)
     # Empty matches notice shown
     info_vals = [i.value for i in at.info]
@@ -128,7 +129,7 @@ def test_matches_d12_drops_existing_connections(monkeypatch):
     at.switch_page("views/matches.py").run()
     assert not at.exception
 
-    text_vals = [t.value for t in at.text]
+    text_vals = [t.value for t in text_like(at)]
     # MATCH1 dropped by D-12
     assert not any("Dr. Connected" in t for t in text_vals)
     # MATCH2 still rendered

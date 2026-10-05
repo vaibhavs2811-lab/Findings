@@ -282,3 +282,14 @@ hr { border-color: var(--fx-border) !important; }
 
 [class*="st-key-fxtile-act-"] { min-height: 205px; }
 .fx-stat .v { font-size: clamp(1.3rem, 2.4vw, 2rem); overflow-wrap: anywhere; }
+
+[class*="st-key-fxpanel-signin"] {
+  padding: 1.8rem 1.8rem 1.2rem; border-color: rgba(124, 92, 255, 0.5);
+  box-shadow: 0 30px 80px -30px rgba(124, 92, 255, 0.55), var(--fx-shadow);
+}
+[class*="st-key-fxpanel-signin"] h1 { font-size: 1.8rem !important; }
+@media (max-width: 768px) {
+  .fx-feature { display: none; }
+  .fx-lead { font-size: 0.95rem; }
+  .fx-display { font-size: 1.9rem; }
+}

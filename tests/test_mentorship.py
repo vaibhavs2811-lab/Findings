@@ -250,6 +250,8 @@ def test_mentor_card_shows_both_labels_and_peer_card_does_not(monkeypatch):
     at.switch_page("views/matches.py").run()
     at.segmented_control(key="match_view").set_value("Mentorship").run()
     assert not at.exception
-    text = " ".join(m.value for m in at.markdown)
+    from tests.uihelp import markdown_like
+
+    text = " ".join(m.value for m in markdown_like(at))
     assert "What you get from this mentor" in text
     assert "What this mentor gets from you" in text

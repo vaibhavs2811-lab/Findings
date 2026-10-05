@@ -10,6 +10,7 @@ from streamlit.testing.v1 import AppTest
 
 from findings.repos.profiles import CARD_COLUMNS, PUBLIC_PROFILE_COLUMNS, get_public, list_public
 from tests.fakes import FakeSupabase
+from tests.uihelp import html_values, markdown_like, text_like
 from ui.cards import badge_markdown
 
 APP = str(Path(__file__).resolve().parent.parent / "app.py")
@@ -226,6 +227,7 @@ def _all_rendered_text(at: AppTest) -> list[str]:
         for el in bucket:
             if hasattr(el, "value") and el.value:
                 collected.append(str(el.value))
+    collected.extend(html_values(at))
     return collected
 
 
@@ -351,7 +353,7 @@ def test_discover_page_shows_cards_without_synthetic_label():
     assert not any("Incomplete User" in t for t in all_texts)
 
     # No synthetic label anywhere on the page
-    assert not any("Synthetic" in m.value for m in at.markdown)
+    assert not any("Synthetic" in m.value for m in markdown_like(at))
     assert not any("Synthetic" in c.value for c in at.caption)
 
     # No email leaked anywhere
@@ -387,21 +389,21 @@ def test_discover_skip_and_unskip():
     at = _app_at_discover(fake)
 
     # Initial: Zoë is visible
-    assert any("Zoë Müller" in t.value for t in at.text)
+    assert any("Zoë Müller" in t.value for t in text_like(at))
 
     # Click Skip on Zoë
     at.button(key=f"skip_{SYNTH_PHD_ID}").click().run()
-    assert not any("Zoë Müller" in t.value for t in at.text)
+    assert not any("Zoë Müller" in t.value for t in text_like(at))
 
     # Switch away to Home and back to Discover: still skipped
     at.switch_page("views/home.py").run()
     at.switch_page("views/discover.py").run()
-    assert not any("Zoë Müller" in t.value for t in at.text)
+    assert not any("Zoë Müller" in t.value for t in text_like(at))
 
     # Click Show skipped (1)
     assert at.button(key="disc_unskip") is not None
     at.button(key="disc_unskip").click().run()
-    assert any("Zoë Müller" in t.value for t in at.text)
+    assert any("Zoë Müller" in t.value for t in text_like(at))
 
 
 def test_discover_skipped_owner_isolation():
@@ -415,7 +417,7 @@ def test_discover_skipped_owner_isolation():
     # Discover resets skips because owner != current user
     assert at.session_state["skipped_owner"] == VIEWER_ID
     assert at.session_state["skipped_ids"] == []
-    assert any("Zoë Müller" in t.value for t in at.text)
+    assert any("Zoë Müller" in t.value for t in text_like(at))
 
 
 def test_discover_load_failure_shows_friendly_warning():
@@ -441,7 +443,7 @@ def test_researcher_page_displays_profile_safely():
     texts = _all_rendered_text(at)
     assert any("Zoë Müller" in t for t in texts)
     assert any("Cultural anthropologist studying diaspora communities." in t for t in texts)
-    assert not any("Synthetic" in m.value for m in at.markdown)
+    assert not any("Synthetic" in m.value for m in markdown_like(at))
 
     # No email leaked
     for t in texts:
@@ -468,7 +470,7 @@ def test_researcher_page_real_profile_no_synthetic_badge():
     assert not at.exception
     texts = _all_rendered_text(at)
     assert any("Dr. Real Quantitative" in t for t in texts)
-    assert not any("Synthetic" in m.value for m in at.markdown)
+    assert not any("Synthetic" in m.value for m in markdown_like(at))
 
 
 def test_researcher_page_invalid_or_missing_id():

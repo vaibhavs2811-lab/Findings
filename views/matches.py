@@ -16,7 +16,8 @@ from findings.services.mentorship import (
     own_give_need_empty,
 )
 from findings.services.mentorship_fit import exchange_labels
-from ui.cards import METHOD_TITLES
+from ui.cards import METHOD_TITLES, match_header_html
+from ui.components import esc, exchange_html
 from ui.connect_button import connect_button
 
 
@@ -50,33 +51,23 @@ def _render_match(
     mode: str = "peer",
 ) -> None:
     """Render single match card with View profile and Connect actions."""
-    with st.container(border=True):
-        name = item.get("full_name") or "Unnamed researcher"
-        st.text(f"#{rank}  {name}")
-        st.markdown(match_badge_markdown(item))
-
-        stage = item.get("career_stage")
-        if stage:
-            st.text(f"Stage: {stage}")
-
-        interests = item.get("interests") or []
-        clean_ints = [str(x).strip() for x in interests if str(x).strip()]
-        if clean_ints:
-            st.text(" · ".join(clean_ints))
+    with st.container(border=True, key=f"fxcard-{mode}-{item.get('id')}"):
+        st.html(match_header_html(item, rank))
 
         why = item.get("why")
         if why:
-            st.text(why)
+            st.html(f'<div class="fx-why">{esc(why)}</div>')
 
         if mode in ("mentor", "mentee") and (item.get("they_give_you") or item.get("you_give_them")):
             get_label, give_label = exchange_labels(mode)
-            left, right = st.columns(2)
-            with left:
-                st.markdown(f"**{get_label}**")
-                st.text(item.get("they_give_you") or "")
-            with right:
-                st.markdown(f"**{give_label}**")
-                st.text(item.get("you_give_them") or "")
+            st.html(
+                exchange_html(
+                    get_label,
+                    item.get("they_give_you") or "",
+                    give_label,
+                    item.get("you_give_them") or "",
+                )
+            )
 
         col1, col2 = st.columns([1, 1])
         with col1:

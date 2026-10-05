@@ -18,6 +18,7 @@ from findings.services.matching import (
     template_why,
 )
 from tests.fakes_matching import FakeMatchingSupabase
+from tests.uihelp import markdown_like, text_like
 
 APP = str(Path(__file__).resolve().parent.parent / "app.py")
 ROOT = Path(__file__).resolve().parent.parent
@@ -288,14 +289,14 @@ def test_app_test_my_matches_view():
 
     assert not at.exception
 
-    text_values = [t.value for t in at.text]
+    text_values = [t.value for t in text_like(at)]
     # Candidate names in st.text
     assert any("Dr. Alice Smith" in t for t in text_values)
     assert any("Bob Synth" in t for t in text_values)
     # Why text rendered in st.text
     assert any("methods complement" in t or "complementary" in t or "approach" in t for t in text_values)
 
-    markdown_values = [m.value for m in at.markdown]
+    markdown_values = [m.value for m in markdown_like(at)]
     assert any("Strong match" in m for m in markdown_values)
     assert not any("Synthetic" in m for m in markdown_values)
 

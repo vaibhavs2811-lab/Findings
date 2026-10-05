@@ -77,17 +77,8 @@ def render_card(
     states: dict[str, dict[str, Any]] | None = None,
 ) -> None:
     """Render an individual researcher card inside a bordered container."""
-    with st.container(border=True):
-        st.text(profile.get("full_name") or "Unnamed researcher")
-        st.markdown(badge_markdown(profile))
-
-        role = mentoring_role_label(profile)
-        if role:
-            st.caption(role)
-
-        interests = top_interests(profile)
-        if interests:
-            st.text("Interests: " + " · ".join(interests))
+    with st.container(border=True, key=f"fxcard-disc-{profile.get('id', 'x')}"):
+        st.html(card_header_html(profile))
 
         col1, col2 = st.columns([1, 1])
         with col1:
@@ -118,3 +109,75 @@ def render_card(
                 is_synthetic=bool(profile.get("is_synthetic")),
                 states=states,
             )
+
+
+# ---------------------------------------------------------------------------
+# Designed card headers (static HTML, every dynamic string escaped)
+# ---------------------------------------------------------------------------
+
+METHOD_TONE = {"qualitative": "cyan", "quantitative": "green", "mixed": "violet"}
+
+
+def _methods_pill(profile: dict | None) -> str:
+    from ui.components import pill_html
+
+    m = (profile or {}).get("methods_effective")
+    if m in METHOD_TITLES:
+        return pill_html(METHOD_TITLES[m], METHOD_TONE[m])
+    return pill_html("Methods not set", "gray")
+
+
+def mentoring_pills(profile: dict | None) -> str:
+    from ui.components import pill_html
+
+    out = ""
+    if (profile or {}).get("seeking_mentor"):
+        out += pill_html("Seeking a mentor", "cyan")
+    if (profile or {}).get("open_to_mentoring"):
+        out += pill_html("Open to mentoring", "pink")
+    return out
+
+
+def match_header_html(item: dict, rank: int) -> str:
+    """Header for a My Matches card: avatar, name, stage, pills and score ring."""
+    from ui.components import avatar_html, chips_html, esc, pill_html, ring_html
+
+    name = item.get("full_name") or "Unnamed researcher"
+    strength = item.get("strength") or "Possible match"
+    tone = {"Strong match": "green", "Good match": "cyan"}.get(strength, "amber")
+    stage = item.get("career_stage") or ""
+    ai = pill_html("AI explained", "violet", "✨") if item.get("why_source") == "ai" else ""
+    score = item.get("score")
+    if score is None:
+        score = round(float(item.get("similarity") or 0) * 100)
+    return (
+        '<div class="fx-row">'
+        + avatar_html(name, 54)
+        + '<div class="fx-col" style="flex:1">'
+        + f'<div class="fx-title">#{rank} · {esc(name)}</div>'
+        + f'<div class="fx-sub">{esc(stage)}</div>'
+        + f'<div class="fx-pills" style="margin-top:.35rem">{pill_html(strength, tone)}'
+        + f"{_methods_pill(item)}{ai}</div></div>"
+        + ring_html(score, strength)
+        + "</div>"
+        + chips_html(item.get("interests"), limit=5)
+    )
+
+
+def card_header_html(profile: dict) -> str:
+    """Header for a Discover card: avatar, name, stage and pills."""
+    from ui.components import avatar_html, chips_html, esc, pill_html
+
+    name = profile.get("full_name") or "Unnamed researcher"
+    stage = profile.get("career_stage")
+    stage_pill = pill_html(stage, "gray") if stage in CAREER_STAGES else ""
+    return (
+        '<div class="fx-row">'
+        + avatar_html(name, 52)
+        + '<div class="fx-col" style="flex:1">'
+        + f'<div class="fx-title">{esc(name)}</div>'
+        + f'<div class="fx-pills" style="margin-top:.3rem">{stage_pill}{_methods_pill(profile)}</div>'
+        + "</div></div>"
+        + f'<div class="fx-pills" style="margin-top:.5rem">{mentoring_pills(profile)}</div>'
+        + chips_html(top_interests(profile, 4), limit=4)
+    )

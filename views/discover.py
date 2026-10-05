@@ -12,7 +12,9 @@ from findings.repos.profiles import list_public
 from findings.services import connection_service
 from ui.cards import METHOD_TITLES, render_card
 
+st.html('<span class="fx-eyebrow">Community</span>')
 st.title("Discover")
+st.caption("Browse researchers across fields, filter by methods and stage, or search an interest.")
 
 # Authenticated user check
 user = session.current_user() or {}
@@ -36,34 +38,46 @@ def _unskip_all() -> None:
     st.session_state["skipped_ids"] = []
 
 
+def _clear_filters() -> None:
+    st.session_state["disc_methods"] = []
+    st.session_state["disc_stages"] = []
+    st.session_state["disc_keyword"] = ""
+
+
 # Filter row
-col_methods, col_stages, col_keyword = st.columns(3)
-with col_methods:
-    st.pills(
-        "Methods",
-        METHODS_LABELS,
-        selection_mode="multi",
-        format_func=lambda m: METHOD_TITLES.get(m, m.title()),
-        key="disc_methods",
-    )
-with col_stages:
-    st.multiselect(
-        "Career stage",
-        CAREER_STAGES,
-        key="disc_stages",
-        placeholder="Any stage",
-    )
-with col_keyword:
-    st.text_input(
-        "Interest keyword",
-        key="disc_keyword",
-        max_chars=60,
-        placeholder="e.g. ethnography",
-    )
+filter_panel = st.container(key="fxpanel-filters")
+with filter_panel:
+    col_methods, col_stages, col_keyword = st.columns(3)
+    with col_methods:
+        st.pills(
+            "Methods",
+            METHODS_LABELS,
+            selection_mode="multi",
+            format_func=lambda m: METHOD_TITLES.get(m, m.title()),
+            key="disc_methods",
+        )
+    with col_stages:
+        st.multiselect(
+            "Career stage",
+            CAREER_STAGES,
+            key="disc_stages",
+            placeholder="Any stage",
+        )
+    with col_keyword:
+        st.text_input(
+            "Interest keyword",
+            key="disc_keyword",
+            max_chars=60,
+            placeholder="e.g. ethnography",
+        )
 
 skipped_ids = list(st.session_state.get("skipped_ids", []))
-if skipped_ids:
-    st.button(f"Show skipped ({len(skipped_ids)})", key="disc_unskip", on_click=_unskip_all)
+action_cols = st.columns([1, 1, 4])
+with action_cols[0]:
+    st.button("Clear filters", key="disc_clear", on_click=_clear_filters, icon=":material/filter_alt_off:")
+with action_cols[1]:
+    if skipped_ids:
+        st.button(f"Show skipped ({len(skipped_ids)})", key="disc_unskip", on_click=_unskip_all)
 
 # Fetch public profiles
 selected_methods = st.session_state.get("disc_methods")
