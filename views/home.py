@@ -77,10 +77,9 @@ except Exception:
 
 st.success("Your profile is complete.")
 
-stats = st.columns(4)
+stats = st.columns(3)
 methods = (profile or {}).get("methods_effective")
 tiles = [
-    (f"{pct}%", "Profile strength"),
     (str(pending), "Requests waiting"),
     (str(accepted), "Connections"),
     ((methods or "not set").title(), "Methods"),

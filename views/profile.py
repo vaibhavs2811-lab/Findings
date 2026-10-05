@@ -99,6 +99,20 @@ def _on_override() -> None:
 
 
 if st.session_state["profile_mode"] == "view":
+    _pct, _still = completeness(profile)
+    with st.container(key="fxpanel-strength"):
+        _c1, _c2 = st.columns([1, 3], vertical_alignment="center")
+        with _c1:
+            st.html(
+                f'<div class="fx-stat"><div class="v">{_pct}%</div><div class="l">Profile strength</div></div>'
+            )
+        with _c2:
+            st.html(meter_html(_pct))
+            st.caption(
+                "Your profile has everything filled in."
+                if not _still
+                else "Add to strengthen it: " + ", ".join(_still) + "."
+            )
     render_profile(profile, show_email=False)
     suggested_tag = (profile or {}).get("methods_suggested") or "Not classified yet"
     st.segmented_control(
