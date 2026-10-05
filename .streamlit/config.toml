@@ -1,7 +1,13 @@
 [theme]
-primaryColor = "#4C6EF5"
+base = "dark"
+primaryColor = "#7C5CFF"
+backgroundColor = "#0A0D18"
+secondaryBackgroundColor = "#11162A"
+textColor = "#E8ECFA"
+linkColor = "#22D3EE"
+borderColor = "#252C4A"
+baseRadius = "0.9rem"
 font = "sans serif"
-baseRadius = "0.6rem"
 
 [client]
 toolbarMode = "minimal"

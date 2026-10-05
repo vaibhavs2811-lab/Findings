@@ -5,6 +5,7 @@ import streamlit as st
 from findings.ai.client import configure
 from findings.core import cookies, session
 from findings.core.config import ConfigError, load_settings
+from ui.components import brand_html, inject_theme
 
 st.set_page_config(page_title="Findings", page_icon=":material/hub:", layout="wide")
 
@@ -18,6 +19,7 @@ except (ConfigError, FileNotFoundError, KeyError, st.errors.StreamlitSecretNotFo
     st.stop()
 
 configure(settings.gemini_api_key)
+inject_theme()
 
 session.get_client(settings)
 session.refresh_if_needed()
@@ -46,8 +48,7 @@ else:
 nav = st.navigation(pages)
 
 with st.sidebar:
-    st.markdown("### :material/hub: Findings")
-    st.caption("Find the right collaborators and mentors.")
+    st.html(brand_html())
     st.caption(f"Findings · Python {platform.python_version()}")
 
 if user:
