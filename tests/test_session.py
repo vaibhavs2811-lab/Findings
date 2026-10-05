@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 from streamlit.testing.v1 import AppTest
-from supabase import AuthApiError
 
+from supabase import AuthApiError
 from tests.fakes import FakeSupabase
 
 ROOT = Path(__file__).resolve().parent.parent

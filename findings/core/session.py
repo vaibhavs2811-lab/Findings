@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 
 import streamlit as st
-from supabase import AuthError, ClientOptions, create_client
 
 from findings.core import cookies
 from findings.core.config import Settings
+from supabase import AuthError, ClientOptions, create_client
 
 log = logging.getLogger(__name__)
 

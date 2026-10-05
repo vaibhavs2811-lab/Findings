@@ -3,9 +3,9 @@ from types import SimpleNamespace
 
 import pytest
 from streamlit.testing.v1 import AppTest
-from supabase import AuthApiError
 
 from findings.core import cookies
+from supabase import AuthApiError
 from tests.fakes import FakeAuth, FakeSupabase, make_user
 
 APP = str(Path(__file__).resolve().parent.parent / "app.py")

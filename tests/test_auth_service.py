@@ -1,9 +1,9 @@
 import pytest
-from supabase import AuthApiError
 
 from findings.core.config import ConfigError, load_settings
 from findings.services import auth_service
 from findings.services.auth_service import AuthFailure
+from supabase import AuthApiError
 from tests.fakes import FakeSupabase
 
 URL = "https://abc.supabase.co"
