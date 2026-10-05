@@ -16,6 +16,8 @@ from findings.ai import embeddings
 from findings.repos import profiles
 from findings.repos.mentorship import MENTOR_POOL_SIZE, MENTORSHIP_MODES, mentorship_candidates
 from findings.services.mentorship import available_modes, gate_notice
+from findings.services.mentorship_fit import cache_hash as mentor_cache_hash
+from findings.services.mentorship_fit import shortlist as mentor_shortlist
 
 logger = logging.getLogger(__name__)
 
@@ -220,6 +222,8 @@ def get_matches(
 
     connected_ids = matches_repo.get_connected_profile_ids(sb, user_id)
     match_key = matches_repo.compute_match_key(me, mode)
+    if mode in MENTORSHIP_MODES:
+        match_key = mentor_cache_hash(match_key, me, mode)
 
     force_fallback = os.environ.get("FINDINGS_FORCE_AI_FALLBACK") == "1"
 
@@ -293,9 +297,18 @@ def get_matches(
     if not candidates:
         return MatchResult(items=[], source="embedding", notice=NO_MATCHES_NOTICE)
 
+    if mode in MENTORSHIP_MODES:
+        candidates = mentor_shortlist(me, candidates, mode)
+
     try:
-        from findings.ai import rerank
-        ai_items = rerank.rerank_candidates(me, candidates)
+        if mode in MENTORSHIP_MODES:
+            from findings.ai import mentorship_prompt
+
+            ai_items = mentorship_prompt.rerank_mentorship(me, candidates, mode)
+        else:
+            from findings.ai import rerank
+
+            ai_items = rerank.rerank_candidates(me, candidates)
         if not force_fallback:
             matches_repo.upsert_cached_matches(
                 sb, user_id, mode, match_key, source="ai", results=ai_items
@@ -320,7 +333,12 @@ def get_matches(
                 )
 
     # Rung 4: Embedding-only fallback
-    emb_items = [to_item(row, me) for row in candidates]
+    if mode in MENTORSHIP_MODES:
+        from findings.ai import mentorship_prompt
+
+        emb_items = mentorship_prompt.fallback_items(me, candidates, mode)
+    else:
+        emb_items = [to_item(row, me) for row in candidates]
     if not force_fallback:
         matches_repo.upsert_cached_matches(
             sb, user_id, mode, match_key, source="embedding", results=emb_items

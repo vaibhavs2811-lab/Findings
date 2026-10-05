@@ -316,16 +316,16 @@ def test_app_test_refresh_button_and_cooldown():
 
     assert not at.exception
     # Find Refresh button
-    refresh_btn = next((b for b in at.button if b.key == "btn_refresh_matches"), None)
+    refresh_btn = next((b for b in at.button if b.key == "btn_refresh_peer"), None)
     assert refresh_btn is not None
 
     # First click sets cooldown timestamp and reruns
     refresh_btn.click().run()
     assert not at.exception
-    assert "matches_last_refreshed" in at.session_state
+    assert "matches_last_refreshed_peer" in at.session_state
 
     # Immediate second click hits cooldown
-    refresh_btn = next((b for b in at.button if b.key == "btn_refresh_matches"), None)
+    refresh_btn = next((b for b in at.button if b.key == "btn_refresh_peer"), None)
     refresh_btn.click().run()
     assert not at.exception
     # Toast displayed for cooldown

@@ -18,6 +18,7 @@ from findings.core.constants import (
 )
 from findings.repos.profiles import get_own_profile
 from findings.services import profile_service as ps
+from ui.autofill_panel import render_autofill_panel
 from ui.profile_view import render_profile
 
 # 1. Pop & show flash message from previous action
@@ -111,6 +112,8 @@ else:
     # Edit mode: seed sentinel check
     if "f_name" not in st.session_state:
         _seed(profile or {})
+
+    render_autofill_panel()
 
     # About you
     st.subheader("About you")

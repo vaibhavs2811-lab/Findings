@@ -6,7 +6,7 @@ from findings.ai.client import configure
 from findings.core import cookies, session
 from findings.core.config import ConfigError, load_settings
 
-st.set_page_config(page_title="Findings")
+st.set_page_config(page_title="Findings", page_icon=":material/hub:", layout="wide")
 
 try:
     settings = load_settings(st.secrets)
@@ -27,25 +27,32 @@ if session.restore_from_cookie(token):
 
 user = session.current_user()
 if user:
-    pages = [
-        st.Page("views/home.py", title="Home", default=True),
-        st.Page("views/profile.py", title="My profile"),
-        st.Page("views/discover.py", title="Discover", icon=":material/travel_explore:"),
-        st.Page("views/matches.py", title="My Matches", icon=":material/handshake:"),
-        st.Page("views/connections.py", title="Connections", icon=":material/group:"),
-        st.Page("views/account.py", title="Account"),
-        st.Page("views/researcher.py", title="Researcher profile", visibility="hidden"),
-    ]
+    pages = {
+        "": [st.Page("views/home.py", title="Home", icon=":material/home:", default=True)],
+        "Find people": [
+            st.Page("views/discover.py", title="Discover", icon=":material/travel_explore:"),
+            st.Page("views/matches.py", title="My Matches", icon=":material/handshake:"),
+            st.Page("views/connections.py", title="Connections", icon=":material/group:"),
+        ],
+        "You": [
+            st.Page("views/profile.py", title="My profile", icon=":material/badge:"),
+            st.Page("views/account.py", title="Account", icon=":material/settings:"),
+        ],
+        "Hidden": [st.Page("views/researcher.py", title="Researcher profile", visibility="hidden")],
+    }
 else:
-    pages = [st.Page("views/login.py", title="Sign in", default=True)]
+    pages = [st.Page("views/login.py", title="Sign in", icon=":material/login:", default=True)]
 
 nav = st.navigation(pages)
 
 with st.sidebar:
+    st.markdown("### :material/hub: Findings")
+    st.caption("Find the right collaborators and mentors.")
     st.caption(f"Findings · Python {platform.python_version()}")
 
 if user:
     with st.sidebar:
+        st.divider()
         st.caption(user["email"])
         st.button("Sign out", key="sidebar_sign_out", on_click=session.sign_out)
 

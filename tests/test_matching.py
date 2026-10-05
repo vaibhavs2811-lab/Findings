@@ -225,7 +225,7 @@ def test_get_matches_rpc_error_handled_gracefully():
 def test_get_matches_invalid_mode_raises():
     fake = FakeMatchingSupabase(initial_profile=_make_own_profile(complete=True))
     with pytest.raises(ValueError, match="Unsupported matching mode"):
-        get_matches(fake, USER_ID, mode="mentor")
+        get_matches(fake, USER_ID, mode="bogus")
 
 
 def test_match_profiles_sql_schema_static_guarantees():

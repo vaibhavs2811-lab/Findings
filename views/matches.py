@@ -15,6 +15,7 @@ from findings.services.mentorship import (
     direction_label,
     own_give_need_empty,
 )
+from findings.services.mentorship_fit import exchange_labels
 from ui.cards import METHOD_TITLES
 from ui.connect_button import connect_button
 
@@ -70,6 +71,16 @@ def _render_match(
         why = item.get("why")
         if why:
             st.text(why)
+
+        if mode in ("mentor", "mentee") and (item.get("they_give_you") or item.get("you_give_them")):
+            get_label, give_label = exchange_labels(mode)
+            left, right = st.columns(2)
+            with left:
+                st.markdown(f"**{get_label}**")
+                st.text(item.get("they_give_you") or "")
+            with right:
+                st.markdown(f"**{give_label}**")
+                st.text(item.get("you_give_them") or "")
 
         col1, col2 = st.columns([1, 1])
         with col1:

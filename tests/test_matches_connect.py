@@ -64,18 +64,18 @@ def test_matches_connect_flow(monkeypatch):
     assert not at.exception
 
     # Find Connect button on match card
-    match_btn = next((b for b in at.button if b.key == f"connect_match_{MATCH1_ID}"), None)
+    match_btn = next((b for b in at.button if b.key == f"connect_peer_match_{MATCH1_ID}"), None)
     assert match_btn is not None
 
     # Open dialog and submit
     match_btn.click().run()
     assert not at.exception
 
-    note_box = next((t for t in at.text_area if t.key == f"connect_note_match_{MATCH1_ID}"), None)
+    note_box = next((t for t in at.text_area if t.key == f"connect_note_peer_match_{MATCH1_ID}"), None)
     assert note_box is not None
     note_box.input("Let's write a grant together!").run()
 
-    send_btn = next((b for b in at.button if b.key == f"connect_send_match_{MATCH1_ID}"), None)
+    send_btn = next((b for b in at.button if b.key == f"connect_send_peer_match_{MATCH1_ID}"), None)
     assert send_btn is not None
     send_btn.click().run()
     assert not at.exception
