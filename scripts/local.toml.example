@@ -1,0 +1,5 @@
+# Copy to scripts/local.toml and fill in real values.
+# scripts/local.toml is gitignored. Never commit it and never paste it into
+# Streamlit Cloud secrets. It is read only by scripts/check_live.py.
+DEMO_EMAIL = "demo@example.com"
+DEMO_PASSWORD = "change-me-not-a-real-password"

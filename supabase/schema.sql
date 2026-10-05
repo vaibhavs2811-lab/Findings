@@ -1,0 +1,293 @@
+-- Findings: full first migration (Phase 1).
+-- Apply in the Supabase SQL Editor (Dashboard -> SQL Editor -> New query -> paste -> Run).
+-- Safe to re-run: every statement is idempotent.
+
+-- 1. Extensions ---------------------------------------------------------------
+create extension if not exists vector with schema extensions;
+
+-- 2. profiles -----------------------------------------------------------------
+-- id equals auth.uid() for real users and is random for synthetic ones, so there is
+-- deliberately NO foreign key to auth.users. No email column here (see profile_contacts).
+create table if not exists public.profiles (
+  id uuid primary key default gen_random_uuid(),
+  is_synthetic boolean not null default false,
+  is_complete boolean not null default false,
+  full_name text not null default '' check (char_length(full_name) <= 120),
+  career_stage text check (career_stage in
+    ('Undergrad', 'Master''s', 'PhD', 'Postdoc', 'Faculty', 'Industry researcher')),
+  institution text check (char_length(institution) <= 2000),
+  education text check (char_length(education) <= 2000),
+  experience text check (char_length(experience) <= 2000),
+  bio text check (char_length(bio) <= 2000),
+  looking_for text check (char_length(looking_for) <= 2000),
+  interests text[] not null default '{}',
+  skills text[] not null default '{}',
+  offers text[] not null default '{}',
+  needs text[] not null default '{}',
+  contributable_skills text[] not null default '{}',
+  want_to_learn text[] not null default '{}',
+  seeking_mentor boolean not null default false,
+  open_to_mentoring boolean not null default false,
+  methods_suggested text check (methods_suggested in ('qualitative', 'quantitative', 'mixed')),
+  methods_override text check (methods_override in ('qualitative', 'quantitative', 'mixed')),
+  methods_effective text generated always as (coalesce(methods_override, methods_suggested)) stored,
+  stage_tier text generated always as (
+    case
+      when career_stage in ('Undergrad', 'Master''s', 'PhD') then 'junior'
+      when career_stage in ('Postdoc', 'Faculty', 'Industry researcher') then 'senior'
+    end
+  ) stored,
+  embedding extensions.vector(768),
+  embedding_model text,
+  embedding_hash text,
+  embedded_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists profiles_methods_effective_idx on public.profiles (methods_effective);
+create index if not exists profiles_career_stage_idx on public.profiles (career_stage);
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists set_updated_at on public.profiles;
+create trigger set_updated_at
+  before update on public.profiles
+  for each row execute function public.set_updated_at();
+
+-- 3. profile_contacts (private email, zero policies) ---------------------------
+create table if not exists public.profile_contacts (
+  profile_id uuid primary key references public.profiles (id) on delete cascade,
+  email text not null
+);
+alter table public.profile_contacts enable row level security;
+revoke all on public.profile_contacts from anon, authenticated;
+
+-- 4. Auth triggers + backfill ---------------------------------------------------
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.profiles (id) values (new.id) on conflict do nothing;
+  insert into public.profile_contacts (profile_id, email) values (new.id, coalesce(new.email, ''))
+    on conflict (profile_id) do update set email = excluded.email;
+  return new;
+end;
+$$;
+
+create or replace function public.handle_deleted_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  delete from public.profiles where id = old.id;
+  return old;
+end;
+$$;
+
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+revoke execute on function public.handle_deleted_user() from public, anon, authenticated;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+drop trigger if exists on_auth_user_deleted on auth.users;
+create trigger on_auth_user_deleted
+  after delete on auth.users
+  for each row execute function public.handle_deleted_user();
+
+-- Backfill users created before this schema existed (Plan 01 tracer sign-ins).
+insert into public.profiles (id)
+  select id from auth.users
+  on conflict do nothing;
+insert into public.profile_contacts (profile_id, email)
+  select id, coalesce(email, '') from auth.users
+  on conflict (profile_id) do update set email = excluded.email;
+
+-- 5. connections ----------------------------------------------------------------
+create table if not exists public.connections (
+  id uuid primary key default gen_random_uuid(),
+  requester_id uuid not null references public.profiles (id) on delete cascade,
+  recipient_id uuid not null references public.profiles (id) on delete cascade,
+  note text check (char_length(note) <= 500),
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
+  created_at timestamptz default now(),
+  responded_at timestamptz,
+  check (requester_id <> recipient_id)
+);
+
+create unique index if not exists connections_pair_uniq
+  on public.connections (least(requester_id, recipient_id), greatest(requester_id, recipient_id));
+create index if not exists connections_recipient_status_idx
+  on public.connections (recipient_id, status);
+create index if not exists connections_requester_status_idx
+  on public.connections (requester_id, status);
+
+create or replace function public.guard_connection_update()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.status <> 'pending' then
+    raise exception 'connection already answered';
+  end if;
+  if new.status not in ('accepted', 'declined') then
+    raise exception 'status must become accepted or declined';
+  end if;
+  if new.requester_id <> old.requester_id
+     or new.recipient_id <> old.recipient_id
+     or new.note is distinct from old.note then
+    raise exception 'only status may change';
+  end if;
+  new.responded_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists guard_connection_update on public.connections;
+create trigger guard_connection_update
+  before update on public.connections
+  for each row execute function public.guard_connection_update();
+
+-- 6. match_cache -----------------------------------------------------------------
+create table if not exists public.match_cache (
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  mode text not null check (mode in ('peer', 'mentor')),
+  profile_hash text not null,
+  source text check (source in ('ai', 'embedding')),
+  results jsonb not null default '[]',
+  created_at timestamptz default now(),
+  primary key (user_id, mode)
+);
+
+-- 7. keepalive --------------------------------------------------------------------
+create table if not exists public.keepalive (
+  id smallint primary key default 1 check (id = 1),
+  note text not null default 'ok'
+);
+insert into public.keepalive (id, note) values (1, 'ok') on conflict do nothing;
+
+-- 8. RLS, policies and grants ------------------------------------------------------
+alter table public.profiles enable row level security;
+alter table public.profile_contacts enable row level security;
+alter table public.connections enable row level security;
+alter table public.match_cache enable row level security;
+alter table public.keepalive enable row level security;
+
+-- profiles
+revoke all on public.profiles from anon;
+revoke delete on public.profiles from authenticated;
+
+drop policy if exists profiles_select on public.profiles;
+create policy profiles_select on public.profiles
+  for select to authenticated
+  using (is_complete or id = (select auth.uid()));
+
+drop policy if exists profiles_insert on public.profiles;
+create policy profiles_insert on public.profiles
+  for insert to authenticated
+  with check (id = (select auth.uid()) and is_synthetic = false);
+
+drop policy if exists profiles_update on public.profiles;
+create policy profiles_update on public.profiles
+  for update to authenticated
+  using (id = (select auth.uid()))
+  with check (id = (select auth.uid()) and is_synthetic = false);
+
+revoke update on public.profiles from authenticated;
+grant update (
+  full_name, career_stage, institution, education, experience, bio, looking_for,
+  interests, skills, offers, needs, contributable_skills, want_to_learn,
+  seeking_mentor, open_to_mentoring, methods_suggested, methods_override,
+  embedding, embedding_model, embedding_hash, embedded_at, is_complete, updated_at
+) on public.profiles to authenticated;
+
+-- connections
+revoke all on public.connections from anon;
+
+drop policy if exists connections_select on public.connections;
+create policy connections_select on public.connections
+  for select to authenticated
+  using ((select auth.uid()) in (requester_id, recipient_id));
+
+drop policy if exists connections_insert on public.connections;
+create policy connections_insert on public.connections
+  for insert to authenticated
+  with check (requester_id = (select auth.uid()) and status = 'pending');
+
+drop policy if exists connections_update on public.connections;
+create policy connections_update on public.connections
+  for update to authenticated
+  using (recipient_id = (select auth.uid()))
+  with check (recipient_id = (select auth.uid()));
+
+drop policy if exists connections_delete on public.connections;
+create policy connections_delete on public.connections
+  for delete to authenticated
+  using (requester_id = (select auth.uid()) and status = 'pending');
+
+revoke update on public.connections from authenticated;
+grant update (status) on public.connections to authenticated;
+
+-- match_cache
+revoke all on public.match_cache from anon;
+
+drop policy if exists match_cache_own on public.match_cache;
+create policy match_cache_own on public.match_cache
+  for all to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
+
+-- keepalive
+drop policy if exists keepalive_read on public.keepalive;
+create policy keepalive_read on public.keepalive
+  for select to anon, authenticated
+  using (true);
+
+revoke insert, update, delete on public.keepalive from anon, authenticated;
+grant select on public.keepalive to anon, authenticated;
+
+-- 9. get_contact_email RPC (the only door to profile_contacts) -----------------------
+create or replace function public.get_contact_email(p_profile uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select pc.email
+  from public.profile_contacts pc
+  where pc.profile_id = p_profile
+    and (
+      p_profile = auth.uid()
+      or exists (
+        select 1
+        from public.connections c
+        where c.status = 'accepted'
+          and (
+            (c.requester_id = auth.uid() and c.recipient_id = p_profile)
+            or (c.recipient_id = auth.uid() and c.requester_id = p_profile)
+          )
+      )
+    );
+$$;
+
+revoke execute on function public.get_contact_email(uuid) from public, anon;
+grant execute on function public.get_contact_email(uuid) to authenticated;
