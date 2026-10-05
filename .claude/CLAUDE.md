@@ -15,7 +15,7 @@ It is a course project, graded on a rubric and shown in a live demo.
 - **Budget:** $0. Every part (frontend, backend, database, auth, hosting, AI) must run on a free tier — hard requirement from the user
 - **Timeline:** under 2 weeks to the demo (by ~2026-10-19) — scope stays on the core build order, and polish comes after core flows work
 - **Tech stack:** Python + Streamlit (UI and hosting on Streamlit Community Cloud), Supabase (Postgres, Auth, RLS, pgvector), Google Gemini via `google-genai` (generation and embeddings), GitHub (repo plus Actions cron)
-- **Security:** secrets live only in `.streamlit/secrets.toml` locally (gitignored) and in Streamlit Cloud secrets. Only the Supabase anon key is used client-side, with RLS enforcing per-user writes. The service-role key is used only by the local seeding script
+- **Security:** by user decision (2026-10-05), `.streamlit/secrets.toml` IS committed to git, holding only the Supabase URL + publishable key. Never put the Supabase secret key, Gemini key or passwords in it; those stay out of git (Streamlit Cloud secrets / local env). Only the Supabase anon key is used client-side, with RLS enforcing per-user writes. The service-role key is used only by the local seeding script
 - **Privacy:** contact email is hidden until a connection is accepted. Synthetic profiles are clearly labelled
 - **Demo reliability:** the AI path must degrade gracefully (embedding-only fallback). The demo must not depend on a single Gemini call succeeding
 
