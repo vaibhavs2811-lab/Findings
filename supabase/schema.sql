@@ -472,3 +472,113 @@ grant execute on function public.my_connections() to authenticated;
 notify pgrst, 'reload schema';
 
 
+-- Phase 6: mentorship mode (MENT-01..04). Appended; earlier sections are untouched.
+
+alter table public.match_cache drop constraint if exists match_cache_mode_check;
+alter table public.match_cache add constraint match_cache_mode_check check (mode in ('peer','mentor','mentee'));
+
+create or replace function public.stage_rank(stage text)
+returns int
+language sql
+immutable
+set search_path = ''
+as $$
+  select case stage
+    when 'Undergrad' then 1
+    when 'Master''s' then 2
+    when 'PhD' then 3
+    when 'Postdoc' then 4
+    when 'Industry researcher' then 4
+    when 'Faculty' then 5
+    else null
+  end;
+$$;
+
+drop function if exists public.match_mentorship(int, uuid[], text);
+
+create or replace function public.match_mentorship(
+  match_count int default 40,
+  exclude_ids uuid[] default '{}',
+  mode text default 'mentor'
+)
+returns table (
+  id uuid,
+  full_name text,
+  career_stage text,
+  stage_tier text,
+  methods_effective text,
+  interests text[],
+  skills text[],
+  experience text,
+  bio text,
+  looking_for text,
+  offers text[],
+  needs text[],
+  contributable_skills text[],
+  want_to_learn text[],
+  seeking_mentor boolean,
+  open_to_mentoring boolean,
+  is_synthetic boolean,
+  similarity double precision
+)
+language sql
+stable
+security invoker
+set search_path = public, extensions
+as $$
+  with me as (
+    select
+      p.embedding as vec,
+      public.stage_rank(p.career_stage) as rank
+    from public.profiles p
+    where p.id = (select auth.uid())
+  )
+  select
+    p.id,
+    p.full_name,
+    p.career_stage,
+    p.stage_tier,
+    p.methods_effective,
+    p.interests,
+    p.skills,
+    p.experience,
+    p.bio,
+    p.looking_for,
+    p.offers,
+    p.needs,
+    p.contributable_skills,
+    p.want_to_learn,
+    p.seeking_mentor,
+    p.open_to_mentoring,
+    p.is_synthetic,
+    (1 - (p.embedding <=> me.vec)) as similarity
+  from public.profiles p
+  cross join me
+  where me.vec is not null
+    and me.rank is not null
+    and p.id <> (select auth.uid())
+    and p.is_complete
+    and p.embedding is not null
+    and not (p.id = any(coalesce(match_mentorship.exclude_ids, '{}'::uuid[])))
+    and not exists (
+      select 1
+      from public.connections c
+      where (c.requester_id = (select auth.uid()) and c.recipient_id = p.id)
+         or (c.recipient_id = (select auth.uid()) and c.requester_id = p.id)
+    )
+    and (
+      (match_mentorship.mode = 'mentor' and p.open_to_mentoring and public.stage_rank(p.career_stage) > me.rank)
+      or
+      (match_mentorship.mode = 'mentee' and p.seeking_mentor and public.stage_rank(p.career_stage) < me.rank)
+    )
+  order by p.embedding <=> me.vec asc
+  limit least(greatest(coalesce(match_mentorship.match_count, 15), 1), 50);
+$$;
+
+revoke execute on function public.match_mentorship(int, uuid[], text) from public, anon;
+grant execute on function public.match_mentorship(int, uuid[], text) to authenticated;
+
+notify pgrst, 'reload schema';
+
+
+

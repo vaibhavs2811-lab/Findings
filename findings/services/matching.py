@@ -14,10 +14,12 @@ from typing import Any
 
 from findings.ai import embeddings
 from findings.repos import profiles
+from findings.repos.mentorship import MENTOR_POOL_SIZE, MENTORSHIP_MODES, mentorship_candidates
+from findings.services.mentorship import available_modes, gate_notice
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_MODES = ("peer",)
+SUPPORTED_MODES = ("peer",) + MENTORSHIP_MODES
 SHORTLIST_SIZE = 15
 
 EMBED_STRONG = 0.75
@@ -198,13 +200,17 @@ def get_matches(
     mode: str = "peer",
     refresh: bool = False,
 ) -> MatchResult:
-    """Retrieve ranked peer collaborator matches for a researcher."""
+    """Retrieve ranked peer or mentorship matches for a researcher."""
     if mode not in SUPPORTED_MODES:
         raise ValueError(f"Unsupported matching mode: {mode}")
 
     me = profiles.get_own_profile(sb, user_id)
     if not me or not me.get("is_complete"):
         return MatchResult(items=[], source="embedding", notice=INCOMPLETE_NOTICE)
+
+    # Mentorship gate: viewer must have the right toggle
+    if mode in MENTORSHIP_MODES and mode not in available_modes(me):
+        return MatchResult(items=[], source="embedding", notice=gate_notice(mode))
 
     embed_status = ensure_embedding(sb, user_id, me)
     if embed_status == "failed":
@@ -251,17 +257,30 @@ def get_matches(
                             computed_at=c_created,
                         )
 
-    # Rung 2: Live AI path
-    try:
-        rows = profiles.match_profiles(
-            sb,
-            match_count=SHORTLIST_SIZE,
-            exclude_ids=list({user_id} | connected_ids),
-            mode=mode,
-        )
-    except Exception as exc:
-        logger.warning("match_profiles RPC failed: %s", type(exc).__name__)
-        return MatchResult(items=[], source="embedding", notice=UNAVAILABLE_NOTICE)
+    # Rung 2: Shortlist from RPC
+    exclude = list({user_id} | connected_ids)
+    if mode in MENTORSHIP_MODES:
+        try:
+            rows = mentorship_candidates(
+                sb,
+                mode=mode,
+                match_count=MENTOR_POOL_SIZE,
+                exclude_ids=exclude,
+            )
+        except Exception as exc:
+            logger.warning("match_mentorship RPC failed: %s", type(exc).__name__)
+            return MatchResult(items=[], source="embedding", notice=UNAVAILABLE_NOTICE)
+    else:
+        try:
+            rows = profiles.match_profiles(
+                sb,
+                match_count=SHORTLIST_SIZE,
+                exclude_ids=exclude,
+                mode=mode,
+            )
+        except Exception as exc:
+            logger.warning("match_profiles RPC failed: %s", type(exc).__name__)
+            return MatchResult(items=[], source="embedding", notice=UNAVAILABLE_NOTICE)
 
     if not rows:
         return MatchResult(items=[], source="embedding", notice=NO_MATCHES_NOTICE)
