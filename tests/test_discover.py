@@ -194,6 +194,8 @@ class PublicProfilesFake(FakeSupabase):
 
     def rpc(self, fn: str, params: dict | None = None):
         self.log.append(("rpc", (fn, params)))
+        if fn == "my_connections":
+            return SimpleNamespace(execute=lambda: SimpleNamespace(data=[]))
         raise AssertionError(f"RPC {fn} called unexpectedly on Discover/Researcher path")
 
 
@@ -462,10 +464,11 @@ def test_researcher_page_displays_profile_safely():
     for t in texts:
         assert "leak@example.org" not in t
 
-    # Fake log touched only table "profiles", no RPC call
+    # Fake log touched only table "profiles", and at most my_connections RPC for connect button
     tables = [val for op, val in fake.log if op == "table"]
     assert all(tbl == "profiles" for tbl in tables)
-    assert not any(op == "rpc" for op, _ in fake.log)
+    rpcs = [val[0] for op, val in fake.log if op == "rpc"]
+    assert all(fn == "my_connections" for fn in rpcs)
 
 
 def test_researcher_page_real_profile_no_synthetic_badge():

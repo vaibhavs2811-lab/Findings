@@ -11,3 +11,8 @@ PROBE_PASSWORD = "change-me-probe-password"
 
 # Optional Gemini API key for scripts/check_gemini.py (also reads global ~/.streamlit/secrets.toml)
 # GEMINI_API_KEY = "REPLACE_ME"
+
+# Supabase secret key (service_role) used ONLY by scripts/reset_connections.py and scripts/seed_load.py.
+# Never commit this key and NEVER put it into Streamlit Cloud secrets.
+# Find it in Supabase Dashboard -> Project Settings -> API Keys -> secret keys.
+SUPABASE_SECRET_KEY = "paste-your-secret-key-here"

@@ -282,6 +282,239 @@ def run_probe(
             pass
 
 
+def run_connections(
+    url: str,
+    key: str,
+    demo_email: str,
+    demo_pass: str,
+    probe_email: str,
+    probe_pass: str,
+) -> None:
+    demo_client = create_client(url, key)
+    probe_client = create_client(url, key)
+    try:
+        d_auth = demo_client.auth.sign_in_with_password(
+            {"email": demo_email, "password": demo_pass}
+        )
+        demo_id = str(d_auth.user.id)
+        p_auth = probe_client.auth.sign_in_with_password(
+            {"email": probe_email, "password": probe_pass}
+        )
+        probe_id = str(p_auth.user.id)
+    except Exception as exc:
+        print(f"SKIP C0-C14: auth failed ({type(exc).__name__})")
+        return
+
+    try:
+        # C0: no connections row exists between demo and probe
+        c0_res = (
+            demo_client.table("connections")
+            .select("id")
+            .or_(
+                f"and(requester_id.eq.{demo_id},recipient_id.eq.{probe_id}),and(requester_id.eq.{probe_id},recipient_id.eq.{demo_id})"
+            )
+            .execute()
+        )
+        c0_rows = c0_res.data or []
+        if c0_rows:
+            report("C0", False, "run scripts/reset_connections.py first")
+            return
+        report("C0", True)
+
+        # C1: anon rpc my_connections raises
+        anon = create_client(url, key)
+        ok, detail = raises(lambda: anon.rpc("my_connections").execute())
+        report("C1", ok, detail)
+
+        # C2: demo get_contact_email(probe id) is null
+        c2_res = demo_client.rpc("get_contact_email", {"other_id": probe_id}).execute()
+        report("C2", c2_res.data is None, f"got {c2_res.data}")
+
+        # C3: demo inserts requester demo, recipient probe, note 'probe' -> 1 row pending
+        c3_res = (
+            demo_client.table("connections")
+            .insert({"requester_id": demo_id, "recipient_id": probe_id, "note": "probe"})
+            .execute()
+        )
+        c3_rows = c3_res.data or []
+        conn_id = c3_rows[0]["id"] if c3_rows else None
+        c3_ok = len(c3_rows) == 1 and c3_rows[0].get("status") == "pending"
+        report("C3", c3_ok, f"{len(c3_rows)} rows")
+
+        # C4: demo inserting same pair again raises with code 23505
+        try:
+            demo_client.table("connections").insert(
+                {"requester_id": demo_id, "recipient_id": probe_id, "note": "dup"}
+            ).execute()
+            report("C4", False, "no error raised")
+        except Exception as exc:
+            report("C4", getattr(exc, "code", None) == "23505", f"code {getattr(exc, 'code', None)}")
+
+        # C5: probe inserting reverse pair raises with code 23505
+        try:
+            probe_client.table("connections").insert(
+                {"requester_id": probe_id, "recipient_id": demo_id, "note": "rev"}
+            ).execute()
+            report("C5", False, "no error raised")
+        except Exception as exc:
+            report("C5", getattr(exc, "code", None) == "23505", f"code {getattr(exc, 'code', None)}")
+
+        # C6: demo inserting with requester_id = probe id raises with code 42501
+        try:
+            demo_client.table("connections").insert(
+                {"requester_id": probe_id, "recipient_id": str(uuid.uuid4())}
+            ).execute()
+            report("C6", False, "no error raised")
+        except Exception as exc:
+            report("C6", getattr(exc, "code", None) == "42501", f"code {getattr(exc, 'code', None)}")
+
+        # C7: demo inserting with explicit status accepted raises with code 42501
+        try:
+            demo_client.table("connections").insert(
+                {"requester_id": demo_id, "recipient_id": str(uuid.uuid4()), "status": "accepted"}
+            ).execute()
+            report("C7", False, "no error raised")
+        except Exception as exc:
+            report("C7", getattr(exc, "code", None) == "42501", f"code {getattr(exc, 'code', None)}")
+
+        # C8: while pending, get_contact_email is null in both directions
+        d_c8 = demo_client.rpc("get_contact_email", {"other_id": probe_id}).execute()
+        p_c8 = probe_client.rpc("get_contact_email", {"other_id": demo_id}).execute()
+        report("C8", d_c8.data is None and p_c8.data is None)
+
+        # C9: while pending, check my_connections direction and email null
+        d_mine = demo_client.rpc("my_connections").execute().data or []
+        p_mine = probe_client.rpc("my_connections").execute().data or []
+        d_p = next((r for r in d_mine if str(r.get("other_id")) == probe_id), None)
+        p_d = next((r for r in p_mine if str(r.get("other_id")) == demo_id), None)
+        c9_ok = (
+            d_p is not None
+            and d_p.get("direction") == "sent"
+            and d_p.get("status") == "pending"
+            and d_p.get("other_email") is None
+            and p_d is not None
+            and p_d.get("direction") == "received"
+            and p_d.get("other_email") is None
+        )
+        report("C9", c9_ok)
+
+        # C10: demo updating its own request to accepted returns 0 rows
+        c10_res = (
+            demo_client.table("connections")
+            .update({"status": "accepted"})
+            .eq("id", conn_id)
+            .execute()
+        )
+        c10_rows = c10_res.data or []
+        c10_read = (
+            demo_client.table("connections")
+            .select("status")
+            .eq("id", conn_id)
+            .execute()
+            .data
+            or []
+        )
+        report(
+            "C10",
+            len(c10_rows) == 0 and len(c10_read) == 1 and c10_read[0].get("status") == "pending",
+        )
+
+        # C11: probe updating to accepted returns 1 row with status accepted and responded_at
+        c11_res = (
+            probe_client.table("connections")
+            .update({"status": "accepted"})
+            .eq("id", conn_id)
+            .eq("recipient_id", probe_id)
+            .execute()
+        )
+        c11_rows = c11_res.data or []
+        c11_ok = (
+            len(c11_rows) == 1
+            and c11_rows[0].get("status") == "accepted"
+            and c11_rows[0].get("responded_at") is not None
+        )
+        report("C11", c11_ok)
+
+        # C12: after accept, get_contact_email matches on both sides
+        d_c12 = demo_client.rpc("get_contact_email", {"other_id": probe_id}).execute()
+        p_c12 = probe_client.rpc("get_contact_email", {"other_id": demo_id}).execute()
+        d_mine_12 = demo_client.rpc("my_connections").execute().data or []
+        p_mine_12 = probe_client.rpc("my_connections").execute().data or []
+        d_row_12 = next((r for r in d_mine_12 if str(r.get("other_id")) == probe_id), None)
+        p_row_12 = next((r for r in p_mine_12 if str(r.get("other_id")) == demo_id), None)
+        c12_ok = (
+            str(d_c12.data or "").lower() == probe_email.lower()
+            and str(p_c12.data or "").lower() == demo_email.lower()
+            and d_row_12 is not None
+            and str(d_row_12.get("other_email") or "").lower() == probe_email.lower()
+            and p_row_12 is not None
+            and str(p_row_12.get("other_email") or "").lower() == demo_email.lower()
+        )
+        report("C12", c12_ok)
+
+        # C13: probe changing accepted row to declined raises
+        ok, detail = raises(
+            lambda: probe_client.table("connections")
+            .update({"status": "declined"})
+            .eq("id", conn_id)
+            .execute()
+        )
+        report("C13", ok, detail)
+
+        # C14: synthetic recipient auto-accepted
+        synth_res = (
+            probe_client.table("profiles")
+            .select("id")
+            .eq("is_synthetic", True)
+            .limit(50)
+            .execute()
+        )
+        synth_ids = [str(r["id"]) for r in (synth_res.data or [])]
+        if not synth_ids:
+            report("C14", False, "no synthetic profiles - load Phase 3 seed")
+        else:
+            p_existing = {str(r.get("other_id")) for r in p_mine_12}
+            pick_id = next((sid for sid in synth_ids if sid not in p_existing), synth_ids[0])
+            ins_synth = (
+                probe_client.table("connections")
+                .insert({"requester_id": probe_id, "recipient_id": pick_id, "note": "synth probe"})
+                .execute()
+            )
+            s_rows = ins_synth.data or []
+            s_cid = s_rows[0]["id"] if s_rows else None
+            s_read = (
+                probe_client.table("connections")
+                .select("status, responded_at")
+                .eq("id", s_cid)
+                .execute()
+                .data
+                or []
+            )
+            s_email = str(
+                probe_client.rpc("get_contact_email", {"other_id": pick_id}).execute().data or ""
+            )
+            p_mine_synth = probe_client.rpc("my_connections").execute().data or []
+            s_mine_row = next((r for r in p_mine_synth if str(r.get("other_id")) == pick_id), None)
+            c14_ok = (
+                len(s_read) == 1
+                and s_read[0].get("status") == "accepted"
+                and s_read[0].get("responded_at") is not None
+                and s_email.endswith("@example.org")
+                and s_mine_row is not None
+                and s_mine_row.get("other_is_synthetic") is True
+            )
+            report("C14", c14_ok)
+    finally:
+        try:
+            demo_client.auth.sign_out()
+        except Exception:
+            pass
+        try:
+            probe_client.auth.sign_out()
+        except Exception:
+            pass
+
+
 def main() -> int:
     settings = load_local_settings(str(ROOT / ".streamlit" / "secrets.toml"))
     url, key = settings.supabase_url, settings.supabase_publishable_key
@@ -295,15 +528,17 @@ def main() -> int:
 
     probe_email, probe_password = probe_credentials()
     if not (probe_email and probe_password):
-        print("SKIP: no probe credentials, P1-P9 not run (set scripts/local.toml or env vars)")
+        print("SKIP: no probe credentials, P1-P9 and C0-C14 not run (set scripts/local.toml or env vars)")
         print(f"{RESULTS['passed']} passed, {RESULTS['failed']} failed")
         return 2 if not RESULTS["failed"] else 1
 
     run_probe(url, key, email, password, probe_email, probe_password)
+    run_connections(url, key, email, password, probe_email, probe_password)
     print(f"{RESULTS['passed']} passed, {RESULTS['failed']} failed")
     return 1 if RESULTS["failed"] else 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
+
 

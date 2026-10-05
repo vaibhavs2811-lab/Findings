@@ -380,3 +380,95 @@ grant execute on function public.match_profiles(extensions.vector, integer, uuid
 -- Phase 6 replaces this function in its own appended section with the same signature and columns.
 notify pgrst, 'reload schema';
 
+-- 10. Phase 5: connections (auto-accept, insert columns, my_connections) -------
+
+-- (a) D-02: Column-level insert permissions (clients cannot insert status or timestamps)
+revoke insert on public.connections from authenticated;
+grant insert (requester_id, recipient_id, note) on public.connections to authenticated;
+
+-- (b) D-01: Auto-accept trigger for synthetic profiles
+create or replace function public.auto_accept_synthetic()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if exists (
+    select 1
+    from public.profiles
+    where id = new.recipient_id
+      and is_synthetic = true
+  ) then
+    update public.connections
+    set status = 'accepted'
+    where id = new.id
+      and status = 'pending';
+  end if;
+  return null;
+end;
+$$;
+
+revoke execute on function public.auto_accept_synthetic() from public, anon, authenticated;
+
+drop trigger if exists auto_accept_synthetic on public.connections;
+create trigger auto_accept_synthetic
+  after insert on public.connections
+  for each row execute function public.auto_accept_synthetic();
+
+-- (c) D-03: my_connections security-definer RPC with gated email via get_contact_email
+create or replace function public.my_connections()
+returns table (
+  connection_id uuid,
+  direction text,
+  status text,
+  note text,
+  created_at timestamptz,
+  responded_at timestamptz,
+  other_id uuid,
+  other_name text,
+  other_stage text,
+  other_is_synthetic boolean,
+  other_email text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    c.id as connection_id,
+    case
+      when c.requester_id = (select auth.uid()) then 'sent'
+      else 'received'
+    end as direction,
+    c.status,
+    c.note,
+    c.created_at,
+    c.responded_at,
+    o.id as other_id,
+    coalesce(nullif(o.full_name, ''), 'Unnamed researcher') as other_name,
+    o.career_stage as other_stage,
+    o.is_synthetic as other_is_synthetic,
+    case
+      when c.status = 'accepted' then public.get_contact_email(o.id)
+      else null
+    end as other_email
+  from public.connections c
+  join public.profiles o on o.id = (
+    case
+      when c.requester_id = (select auth.uid()) then c.recipient_id
+      else c.requester_id
+    end
+  )
+  where c.requester_id = (select auth.uid())
+     or c.recipient_id = (select auth.uid())
+  order by c.created_at desc;
+$$;
+
+revoke execute on function public.my_connections() from public, anon;
+grant execute on function public.my_connections() to authenticated;
+
+notify pgrst, 'reload schema';
+
+
