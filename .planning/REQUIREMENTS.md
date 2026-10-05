@@ -28,10 +28,10 @@ Requirements for the graded demo (~2026-10-19). Each maps to one roadmap phase.
 
 ### AI Autofill
 
-- [ ] **AUTO-01**: User can paste text (bio, CV text, Scholar/LinkedIn "about") and have Gemini pre-fill the profile form with structured fields
-- [ ] **AUTO-02**: User can upload a PDF CV and have Gemini pre-fill the profile form the same way
-- [ ] **AUTO-03**: Autofill only pre-fills the form. The user reviews and edits, and nothing is saved until they click Save
-- [ ] **AUTO-04**: If autofill fails (rate limit, bad file, malformed output), the user sees a clear message and can still fill the form manually
+- [x] **AUTO-01**: User can paste text (bio, CV text, Scholar/LinkedIn "about") and have Gemini pre-fill the profile form with structured fields
+- [x] **AUTO-02**: User can upload a PDF CV and have Gemini pre-fill the profile form the same way
+- [x] **AUTO-03**: Autofill only pre-fills the form. The user reviews and edits, and nothing is saved until they click Save
+- [x] **AUTO-04**: If autofill fails (rate limit, bad file, malformed output), the user sees a clear message and can still fill the form manually
 
 ### Discover
 
@@ -52,10 +52,10 @@ Requirements for the graded demo (~2026-10-19). Each maps to one roadmap phase.
 
 ### Mentorship Mode
 
-- [ ] **MENT-01**: User can switch to Mentorship mode. Users seeking a mentor see ranked mentors, and users open to mentoring see ranked mentees
-- [ ] **MENT-02**: Mentorship ranking scores give/need fit in both directions: the mentor's needs against the junior's contributable skills, and the mentor's offers against the junior's learning goals
-- [ ] **MENT-03**: Each mentorship match explains both sides of the exchange: what the junior gets and what the mentor gets
-- [ ] **MENT-04**: Mentorship matches use the same cache and fallback behaviour as peer matches
+- [x] **MENT-01**: User can switch to Mentorship mode. Users seeking a mentor see ranked mentors, and users open to mentoring see ranked mentees
+- [x] **MENT-02**: Mentorship ranking scores give/need fit in both directions: the mentor's needs against the junior's contributable skills, and the mentor's offers against the junior's learning goals
+- [x] **MENT-03**: Each mentorship match explains both sides of the exchange: what the junior gets and what the mentor gets
+- [x] **MENT-04**: Mentorship matches use the same cache and fallback behaviour as peer matches
 
 ### Connections
 
@@ -81,12 +81,12 @@ Requirements for the graded demo (~2026-10-19). Each maps to one roadmap phase.
 
 ### Documentation (rubric-required)
 
-- [ ] **DOCS-01**: README / user manual covering setup and how to use each feature
-- [ ] **DOCS-02**: Architecture diagram that matches the implemented system
+- [x] **DOCS-01**: README / user manual covering setup and how to use each feature
+- [x] **DOCS-02**: Architecture diagram that matches the implemented system
 - [ ] **DOCS-03**: Test report with screenshots of each use case
-- [ ] **DOCS-04**: Limitations document. It covers free-tier quotas, synthetic data, no identity verification, AI explanation accuracy, and bias
-- [ ] **DOCS-05**: AI-use declaration covering the AI inside the product (autofill, methods label, matching), the AI used to build it, and the fact that Google may use free-tier Gemini inputs
-- [ ] **DOCS-06**: Source/data documentation, including how the synthetic dataset was generated
+- [x] **DOCS-04**: Limitations document. It covers free-tier quotas, synthetic data, no identity verification, AI explanation accuracy, and bias
+- [x] **DOCS-05**: AI-use declaration covering the AI inside the product (autofill, methods label, matching), the AI used to build it, and the fact that Google may use free-tier Gemini inputs
+- [x] **DOCS-06**: Source/data documentation, including how the synthetic dataset was generated
 
 ## v2 Requirements
 

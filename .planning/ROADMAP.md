@@ -29,10 +29,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation & Sign-in** - Live app on Streamlit Cloud with OTP and demo-password sign-in, on the full schema, RLS, SMTP and keep-alive (completed 2026-10-05)
 - [x] **Phase 2: Researcher Profiles** - Researchers create and edit their own profile: career stage, mentoring toggles, give/need fields and an AI-suggested methods badge (completed 2026-10-05)
 - [x] **Phase 3: Researcher Pool & Discover** - 60-100 labelled synthetic researchers seeded with embeddings; browse, filter, search and skip cards; open profile pages (completed 2026-10-05)
-- [ ] **Phase 4: AI Peer Matching** - "My Matches": pgvector shortlist plus a Gemini rerank with grounded explanations, cached, with an embedding-only fallback
-- [ ] **Phase 5: Connections & Email Unlock** - Send, accept or decline requests from anywhere; contact email is revealed only after accept, enforced in the database
-- [ ] **Phase 6: Mentorship Mode** - Find a mentor or a mentee, ranked on two-way give/need fit, with both sides of the exchange explained
-- [ ] **Phase 7: AI Profile Autofill** - Paste text or upload a PDF CV to pre-fill the profile form, then review before saving (can be cut)
+- [x] **Phase 4: AI Peer Matching** - "My Matches": pgvector shortlist plus a Gemini rerank with grounded explanations, cached, with an embedding-only fallback
+- [x] **Phase 5: Connections & Email Unlock** - Send, accept or decline requests from anywhere; contact email is revealed only after accept, enforced in the database
+- [x] **Phase 6: Mentorship Mode** - Find a mentor or a mentee, ranked on two-way give/need fit, with both sides of the exchange explained
+- [x] **Phase 7: AI Profile Autofill** - Paste text or upload a PDF CV to pre-fill the profile form, then review before saving (can be cut)
 - [ ] **Phase 8: Docs & Demo Readiness** - Rubric documents that match the shipped app, plus a rehearsed pre-demo runbook
 
 ## Phase Details
