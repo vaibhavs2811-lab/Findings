@@ -307,3 +307,31 @@ h1 { padding-top: 0.25rem !important; }
 .fx-chip { font-size: 0.74rem; padding: 0.2rem 0.6rem; }
 
 [class*="st-key-fxpanel-preview"] { position: sticky; top: 4.5rem; align-self: flex-start; }
+
+/* ---------- Motion, focus, details ---------- */
+@keyframes fxfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+[data-testid="stMainBlockContainer"] > div > [data-testid="stVerticalBlock"] { animation: fxfade 0.35s ease both; }
+
+:focus-visible { outline: 2px solid var(--fx-cyan) !important; outline-offset: 2px; border-radius: 8px; }
+::selection { background: rgba(124, 92, 255, 0.45); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, currentColor 22%, transparent); border-radius: 999px; }
+
+[data-testid="stSpinner"] { color: var(--fx-violet-2); font-weight: 600; }
+[data-testid="stToast"], [data-testid="stNotification"] {
+  border-radius: 14px; border: 1px solid var(--fx-border); box-shadow: var(--fx-shadow);
+}
+[role="dialog"] { border-radius: 22px !important; border: 1px solid rgba(124, 92, 255, 0.5); }
+[data-testid="stCode"] pre, [data-testid="stCode"] { border-radius: 12px; }
+
+/* Keep action buttons side by side inside cards, even on phones. */
+[class*="st-key-fxcard-"] [data-testid="stHorizontalBlock"] { flex-direction: row !important; flex-wrap: nowrap !important; gap: 0.6rem; }
+[class*="st-key-fxcard-"] [data-testid="stColumn"] { min-width: 0 !important; width: auto !important; flex: 1 1 0 !important; }
+[class*="st-key-fxcard-"] [data-testid="stButton"] button,
+[class*="st-key-fxcard-"] [data-testid="stPageLink-NavLink"] { width: 100%; justify-content: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+[class*="st-key-fxcard-"] [data-testid="stButton"], [class*="st-key-fxcard-"] [data-testid="stPageLink"] { width: 100%; }
+[class*="st-key-fxcard-"] .fx-pills:empty { display: none; }
