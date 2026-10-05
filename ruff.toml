@@ -1,0 +1,5 @@
+line-length = 100
+
+[lint]
+# Blind excepts are deliberate in the auth layer: only AuthFailure (user-safe text) may leave it.
+ignore = ["BLE001", "S110"]
