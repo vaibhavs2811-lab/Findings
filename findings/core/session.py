@@ -6,7 +6,6 @@ import logging
 
 import streamlit as st
 
-from findings.core import cookies
 from findings.core.config import Settings
 from supabase import AuthError, ClientOptions, create_client
 
@@ -32,23 +31,22 @@ def set_signed_in(user_id: str, email: str) -> None:
     st.session_state["user"] = {"id": user_id, "email": email}
 
 
-def restore_once() -> None:
-    """Try the refresh-token cookie once per browser session."""
-    if st.session_state.get("restore_attempted"):
-        return
-    st.session_state["restore_attempted"] = True
-    if current_user():
-        return
-    token = cookies.read_refresh_token()
-    if not token:
-        return
+def restore_from_cookie(token: str | None) -> bool:
+    """Sign in from the refresh-token cookie; each token is tried at most once per session."""
+    if current_user() or not token:
+        return False
+    if st.session_state.get("restore_attempted") == token:
+        return False
+    st.session_state["restore_attempted"] = token
     try:
         res = st.session_state["sb"].auth.refresh_session(token)
         set_signed_in(res.user.id, res.user.email)
+        return True
     except AuthError:
         log.warning("cookie restore failed; showing sign in")
     except Exception:
         log.warning("cookie restore failed unexpectedly; showing sign in")
+    return False
 
 
 def _clear_signed_in() -> None:
@@ -88,3 +86,4 @@ def sign_out() -> None:
             log.warning("sign-out request failed; cleared local state anyway")
     for key in [k for k in st.session_state if k in ("user", "sb") or k.startswith("otp_")]:
         del st.session_state[key]
+    st.session_state["clear_cookie"] = True

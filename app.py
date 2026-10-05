@@ -17,8 +17,10 @@ except (ConfigError, FileNotFoundError, KeyError, st.errors.StreamlitSecretNotFo
     st.stop()
 
 session.get_client(settings)
-session.restore_once()
 session.refresh_if_needed()
+token = cookies.sync(session.cookie_value(), clear=st.session_state.pop("clear_cookie", False))
+if session.restore_from_cookie(token):
+    st.rerun()
 
 user = session.current_user()
 if user:
@@ -39,5 +41,4 @@ if user:
         st.caption(user["email"])
         st.button("Sign out", key="sidebar_sign_out", on_click=session.sign_out)
 
-cookies.sync_cookie(session.cookie_value())
 nav.run()

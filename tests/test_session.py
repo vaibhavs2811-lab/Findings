@@ -64,7 +64,6 @@ def test_sign_out_from_any_page(page):
     sign_outs = [c for c in sb.auth.calls if c[0] == "sign_out"]
     assert sign_outs == [("sign_out", {"scope": "local"})]
     assert "user" not in at.session_state
-    assert at.session_state["restore_attempted"] is True
     assert at.title[0].value == "Sign in to Findings"
 
 

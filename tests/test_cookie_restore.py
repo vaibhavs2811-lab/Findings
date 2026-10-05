@@ -34,10 +34,18 @@ def _fake():
 
 
 @pytest.fixture
-def synced(monkeypatch):
-    calls = []
-    monkeypatch.setattr(cookies, "sync_cookie", lambda v: calls.append(v))
-    return calls
+def browser(monkeypatch):
+    """Fake the browser bridge: `token` is what the browser reports, `calls` what Python sent."""
+    state = SimpleNamespace(token=None, calls=[])
+
+    def fake_sync(want, clear=False):
+        state.calls.append((want, clear))
+        if clear:
+            state.token = None
+        return state.token
+
+    monkeypatch.setattr(cookies, "sync", fake_sync)
+    return state
 
 
 def _app(sb, token):
@@ -51,50 +59,63 @@ def _count(sb, name):
     return len([c for c in sb.auth.calls if c[0] == name])
 
 
-def test_build_script_sets_cookie_with_flags():
-    s = cookies.build_cookie_script("abc123_-.XYZ")
-    for part in ("findings_rt", "Path=/", "Max-Age=604800", "SameSite=Strict", "Secure"):
-        assert part in s
-    assert "cur!==want" in s  # only writes when the value differs
-    assert '"abc123_-.XYZ"' in s
+def test_bridge_js_writes_and_reports_cookie_with_flags():
+    js = cookies._BRIDGE_JS
+    for part in ("findings_rt", "Path=/", "Max-Age=604800", "Max-Age=0", "SameSite=Lax", "Secure"):
+        assert part in js
+    assert "setStateValue" in js
+    assert "cur !== d.seen" in js  # reports only changes, so no rerun loop
 
 
-def test_build_script_none_expires_cookie():
-    assert "Max-Age=0" in cookies.build_cookie_script(None)
+class _Bridge:
+    def __init__(self, reported=None):
+        self.reported = reported
+        self.data = None
+
+    def __call__(self, **kwargs):
+        self.data = kwargs["data"]
+        return {"rt": self.reported}
+
+
+@pytest.fixture
+def no_server_cookie(monkeypatch):
+    monkeypatch.setattr(cookies.st, "context", SimpleNamespace(cookies={}), raising=False)
 
 
 @pytest.mark.parametrize(
     "bad", ['ab"cdefgh', "abcd<efgh", "abcd;efgh", "abcd efgh", "a" * 513, "short", ""]
 )
-def test_build_script_rejects_unsafe_values(bad):
-    with pytest.raises(ValueError):
-        cookies.build_cookie_script(bad)
+def test_sync_never_sends_unsafe_want_to_browser(monkeypatch, no_server_cookie, bad):
+    bridge = _Bridge()
+    monkeypatch.setattr(cookies, "_bridge", bridge)
+    monkeypatch.setattr(cookies.st, "session_state", {})
+    cookies.sync(bad)
+    assert bridge.data["want"] is None
 
 
-def test_sync_cookie_never_embeds_invalid_value(monkeypatch):
-    out = []
-    monkeypatch.setattr(cookies.st, "html", lambda body, **k: out.append(body))
-    cookies.sync_cookie('x"; alert(1)//')
-    assert "alert" not in out[0]
-    assert "Max-Age=0" in out[0]
+def test_sync_returns_validated_browser_token(monkeypatch, no_server_cookie):
+    monkeypatch.setattr(cookies.st, "session_state", {})
+    monkeypatch.setattr(cookies, "_bridge", _Bridge("good_token-1"))
+    assert cookies.sync(None) == "good_token-1"
+    monkeypatch.setattr(cookies, "_bridge", _Bridge('bad"value'))
+    assert cookies.sync(None) is None
+    monkeypatch.setattr(cookies, "_bridge", _Bridge(""))
+    assert cookies.sync(None) is None
 
 
-def test_read_refresh_token_handles_missing_and_bad(monkeypatch):
-    def ctx(cookie_dict):
-        return SimpleNamespace(cookies=cookie_dict)
-
-    monkeypatch.setattr(cookies.st, "context", ctx({}), raising=False)
-    assert cookies.read_refresh_token() is None
-    monkeypatch.setattr(cookies.st, "context", ctx({"findings_rt": 'bad"value'}), raising=False)
-    assert cookies.read_refresh_token() is None
-    monkeypatch.setattr(cookies.st, "context", ctx({"findings_rt": "good_token-1"}), raising=False)
-    assert cookies.read_refresh_token() == "good_token-1"
-    monkeypatch.setattr(cookies.st, "context", object(), raising=False)
-    assert cookies.read_refresh_token() is None
+def test_sync_falls_back_to_server_cookie_only_before_browser_reports(monkeypatch):
+    monkeypatch.setattr(cookies.st, "session_state", {})
+    monkeypatch.setattr(
+        cookies.st, "context", SimpleNamespace(cookies={"findings_rt": "server_tok1"}), raising=False
+    )
+    monkeypatch.setattr(cookies, "_bridge", _Bridge(None))
+    assert cookies.sync(None) == "server_tok1"
+    monkeypatch.setattr(cookies, "_bridge", _Bridge(""))
+    assert cookies.sync(None) is None
 
 
-def test_restore_signs_in_once_and_syncs_rotated_token(monkeypatch, synced):
-    monkeypatch.setattr(cookies, "read_refresh_token", lambda: "rt_old_token")
+def test_restore_signs_in_once_and_syncs_rotated_token(browser):
+    browser.token = "rt_old_token"
     sb = _fake()
     at = _app(sb, None).run()
     assert not at.exception
@@ -102,11 +123,11 @@ def test_restore_signs_in_once_and_syncs_rotated_token(monkeypatch, synced):
     assert "restored@b.com" in at.markdown[0].value
     at.run()
     assert _count(sb, "refresh_session") == 1
-    assert synced[-1] == "rt_new_token"
+    assert browser.calls[-1] == ("rt_new_token", False)
 
 
-def test_restore_with_reused_token_shows_sign_in(monkeypatch, synced):
-    monkeypatch.setattr(cookies, "read_refresh_token", lambda: "rt_old_token")
+def test_restore_with_reused_token_shows_sign_in(browser):
+    browser.token = "rt_old_token"
     sb = _fake()
     sb.auth.refresh_error = AuthApiError(
         "Already Used", 400, "refresh_token_already_used"
@@ -114,19 +135,17 @@ def test_restore_with_reused_token_shows_sign_in(monkeypatch, synced):
     at = _app(sb, None).run()
     assert not at.exception
     assert at.title[0].value == "Sign in to Findings"
-    assert synced[-1] is None
+    assert _count(sb, "refresh_session") == 1
 
 
-def test_no_cookie_means_sign_in_and_no_refresh(monkeypatch, synced):
-    monkeypatch.setattr(cookies, "read_refresh_token", lambda: None)
+def test_no_cookie_means_sign_in_and_no_refresh(browser):
     sb = _fake()
     at = _app(sb, None).run()
     assert at.title[0].value == "Sign in to Findings"
     assert _count(sb, "refresh_session") == 0
 
 
-def test_rotated_session_is_synced(monkeypatch, synced):
-    monkeypatch.setattr(cookies, "read_refresh_token", lambda: None)
+def test_rotated_session_is_synced(browser):
     sb = _fake()
     user = make_user("user-1", "me@b.com")
     sb.auth._session = SimpleNamespace(
@@ -136,11 +155,10 @@ def test_rotated_session_is_synced(monkeypatch, synced):
     at.session_state["user"] = {"id": "user-1", "email": "me@b.com"}
     at.run()
     assert not at.exception
-    assert synced[-1] == "rt_rotated"
+    assert browser.calls[-1] == ("rt_rotated", False)
 
 
-def test_get_session_error_signs_user_out(monkeypatch, synced):
-    monkeypatch.setattr(cookies, "read_refresh_token", lambda: None)
+def test_get_session_error_signs_user_out(browser):
     sb = _fake()
 
     def boom():
@@ -152,4 +170,20 @@ def test_get_session_error_signs_user_out(monkeypatch, synced):
     at.run()
     assert not at.exception
     assert at.title[0].value == "Sign in to Findings"
-    assert synced[-1] is None
+    assert browser.calls[-1] == (None, False)
+
+
+def test_sign_out_clears_browser_cookie(browser):
+    sb = _fake()
+    user = make_user("user-1", "me@b.com")
+    sb.auth._session = SimpleNamespace(
+        access_token="a", refresh_token="rt_live", expires_at=4_102_444_800, user=user
+    )
+    at = _app(sb, None)
+    at.session_state["user"] = {"id": "user-1", "email": "me@b.com"}
+    at.run()
+    next(b for b in at.sidebar.button if b.label == "Sign out").click()
+    at.run()
+    assert not at.exception
+    assert browser.calls[-1] == (None, True)
+    assert at.title[0].value == "Sign in to Findings"
