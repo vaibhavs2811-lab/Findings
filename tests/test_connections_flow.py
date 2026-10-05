@@ -211,3 +211,53 @@ def test_app_test_connections_tracer_end_to_end(store: ConnectionStore, monkeypa
     at_a.run()
     code_vals_a = [c.value for c in at_a.code]
     assert any("bob@lab.org" in c for c in code_vals_a)
+
+
+def test_incomplete_profile_cannot_send_request(store: ConnectionStore):
+    store.add_profile(USER_A, "Dr. Alice", is_complete=False)
+    fake_a = ConnectionsFake(USER_A, store)
+    with pytest.raises(ConnectionFailure, match="Complete your profile"):
+        connection_service.send_request(fake_a, USER_A, USER_B, "Hello")
+
+
+def test_reverse_request_feedback_and_inline_accept(store: ConnectionStore, monkeypatch):
+    from findings.repos import profiles
+
+    monkeypatch.setattr(
+        profiles,
+        "get_public",
+        lambda sb, pid: store.profiles.get(pid),
+    )
+
+    fake_a = ConnectionsFake(USER_A, store)
+    fake_b = ConnectionsFake(USER_B, store)
+
+    # 1. User A sends request to User B
+    connection_service.send_request(fake_a, USER_A, USER_B, "Hi Bob")
+
+    # 2. User B trying to send request back is rejected with reverse-request message
+    with pytest.raises(ConnectionFailure, match="already sent you a request"):
+        connection_service.send_request(fake_b, USER_B, USER_A, "Hi Alice back")
+
+    # 3. User B views User A's profile page -> shows "Accept their request" button
+    at_b = AppTest.from_file(APP, default_timeout=15)
+    at_b.secrets.update(SECRETS)
+    at_b.session_state["sb"] = fake_b
+    at_b.session_state["user"] = {"id": USER_B, "email": "bob@lab.org"}
+    at_b.query_params["id"] = USER_A
+    at_b.run()
+    at_b.switch_page("views/researcher.py").run()
+    assert not at_b.exception
+
+    accept_btn = next((b for b in at_b.button if (b.key or "").startswith("accept_req_")), None)
+    assert accept_btn is not None
+    assert "Accept their request" in accept_btn.label
+
+    # 4. User B clicks "Accept their request" -> accepts connection inline
+    accept_btn.click().run()
+    assert not at_b.exception
+
+    # Now on re-render, connection is accepted and shows Connected chip
+    captions = [c.value for c in at_b.caption]
+    assert any("Connected · email on your Connections page" in c for c in captions)
+

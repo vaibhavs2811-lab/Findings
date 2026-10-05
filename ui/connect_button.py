@@ -106,7 +106,19 @@ def connect_button(
         elif state == "declined":
             st.caption("Not available")
         elif state == "received":
-            st.caption("They sent you a request · answer it on your Connections page")
+            cid = info.get("connection_id")
+            if cid:
+                if st.button("Accept their request", key=f"accept_req_{key}", type="primary"):
+                    try:
+                        connection_service.respond(sb, user_id, cid, accept=True)
+                        st.session_state["connect_flash"] = (
+                            f"Connected with {name or 'this researcher'}! Email unlocked on Connections page."
+                        )
+                        st.rerun()
+                    except connection_service.ConnectionFailure as err:
+                        st.error(str(err))
+            else:
+                st.caption("They sent you a request · answer it on your Connections page")
         return
 
     st.button("Connect", key=f"connect_{key}", on_click=_open, args=(key,))

@@ -11,6 +11,7 @@ from typing import Any
 from postgrest.exceptions import APIError as PostgrestAPIError
 
 from findings.repos import connections as connections_repo
+from findings.repos import profiles as profiles_repo
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,34 @@ def send_request(
     clean_note = (note or "").strip()
     if len(clean_note) > NOTE_MAX:
         raise ConnectionFailure("Keep the note under 500 characters.")
+
+    # D-14: Incomplete profile guard
+    try:
+        own = profiles_repo.get_own_profile(sb, user_id, columns="id, is_complete")
+        if own is not None and not own.get("is_complete", True):
+            raise ConnectionFailure("Complete your profile before sending connection requests.")
+    except ConnectionFailure:
+        raise
+    except Exception as exc:
+        logger.debug("Profiles check skipped: %s", exc)
+
+    # D-07: Pre-emptive check against existing connection states
+    try:
+        states = connection_states(sb, user_id)
+        if str(recipient_id) in states:
+            curr = states[str(recipient_id)].get("state")
+            if curr == "received":
+                raise ConnectionFailure(
+                    "This researcher already sent you a request. Check your Connections page to accept it."
+                )
+            if curr in ("sent", "connected"):
+                raise ConnectionFailure("You've already connected with this researcher or sent a request.")
+            if curr == "declined":
+                raise ConnectionFailure("This connection is no longer available.")
+    except ConnectionFailure:
+        raise
+    except Exception as exc:
+        logger.debug("Pre-insert states check skipped: %s", exc)
 
     try:
         inserted = connections_repo.insert_request(
