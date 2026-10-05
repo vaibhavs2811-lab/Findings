@@ -31,7 +31,7 @@ Run this the day before and again 30 minutes before the demo. Tick each box and 
 
 1. Sign in, show My profile, change one field, Save (methods badge updates or keeps its value).
 2. Discover: filter by methods and stage, search an interest, Skip a card.
-3. Open a researcher profile (note: no email, "Synthetic" label).
+3. Open a researcher profile (note: public fields only, no email).
 4. My Matches: show a ranked match and its explanation; switch to Mentorship and show the two-sided
    "what you get / what they get".
 5. Send a connection request to a synthetic profile: it is accepted at once and the example.org

@@ -296,9 +296,8 @@ def test_app_test_my_matches_view():
     assert any("methods complement" in t or "complementary" in t or "approach" in t for t in text_values)
 
     markdown_values = [m.value for m in at.markdown]
-    # Strong match and Synthetic badges in markdown
     assert any("Strong match" in m for m in markdown_values)
-    assert any("Synthetic" in m for m in markdown_values)
+    assert not any("Synthetic" in m for m in markdown_values)
 
     caption_values = [c.value for c in at.caption]
     assert any("Ranked by profile similarity" in c for c in caption_values)

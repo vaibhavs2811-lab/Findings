@@ -42,9 +42,6 @@ def _request_dialog(
     """Render modal dialog with note input and submit button."""
     st.text(f"To: {name or 'this researcher'}")
 
-    if is_synthetic:
-        st.caption("Synthetic profiles accept connection requests automatically.")
-
     note_val = st.text_area(
         "Note (optional)",
         key=f"connect_note_{key}",
@@ -63,7 +60,7 @@ def _request_dialog(
             st.session_state.pop("connect_dialog", None)
             st.session_state.pop(f"connect_note_{key}", None)
             if res.get("status") == "accepted" or is_synthetic:
-                st.session_state["connect_flash"] = "Auto-accepted (synthetic profile)"
+                st.session_state["connect_flash"] = "Connected! Email unlocked on Connections page."
             else:
                 st.session_state["connect_flash"] = f"Request sent to {name or 'this researcher'}."
             st.rerun()

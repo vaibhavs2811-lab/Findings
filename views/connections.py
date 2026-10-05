@@ -125,13 +125,10 @@ def render_connections_page() -> None:
                 other_name = item.get("other_name") or "Unnamed researcher"
                 other_stage = item.get("other_stage") or ""
                 other_email = item.get("other_email") or ""
-                is_synth = bool(item.get("other_is_synthetic"))
 
                 with st.container(border=True):
                     st.subheader(other_name)
                     cap_text = f"{other_stage}"
-                    if is_synth:
-                        cap_text += " · Synthetic · auto-accepted"
                     st.caption(cap_text)
 
                     st.markdown("**Contact email:**")

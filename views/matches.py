@@ -21,7 +21,7 @@ from ui.connect_button import connect_button
 
 
 def match_badge_markdown(item: dict[str, Any]) -> str:
-    """Format markdown badges for match strength, methods, and synthetic status."""
+    """Format markdown badges for match strength, and methods orientation."""
     badges: list[str] = []
 
     # 1. Match strength badge
@@ -37,10 +37,6 @@ def match_badge_markdown(item: dict[str, Any]) -> str:
     methods = item.get("methods_effective")
     if methods in METHOD_TITLES:
         badges.append(f":violet-badge[{METHOD_TITLES[methods]}]")
-
-    # 3. Synthetic profile badge
-    if item.get("is_synthetic") is True:
-        badges.append(":orange-badge[:material/smart_toy: Synthetic]")
 
     return " ".join(badges)
 

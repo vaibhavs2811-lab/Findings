@@ -13,7 +13,6 @@ from findings.services import connection_service
 from ui.cards import METHOD_TITLES, render_card
 
 st.title("Discover")
-st.caption("Profiles labelled 'Synthetic profile' are AI-generated example researchers, not real people.")
 
 # Authenticated user check
 user = session.current_user() or {}

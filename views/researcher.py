@@ -10,7 +10,6 @@ import streamlit as st
 
 from findings.core.session import current_user
 from findings.repos.profiles import get_public
-from ui.cards import synthetic_badge
 from ui.connect_button import connect_button
 from ui.profile_view import render_profile
 
@@ -33,7 +32,6 @@ if not profile:
     st.page_link("views/discover.py", label="Back to Discover", icon=":material/arrow_back:")
     st.stop()
 
-synthetic_badge(profile)
 render_profile(profile, show_email=False)
 
 user = current_user()

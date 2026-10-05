@@ -10,7 +10,7 @@ from streamlit.testing.v1 import AppTest
 
 from findings.repos.profiles import CARD_COLUMNS, PUBLIC_PROFILE_COLUMNS, get_public, list_public
 from tests.fakes import FakeSupabase
-from ui.cards import SYNTHETIC_LABEL, badge_markdown
+from ui.cards import badge_markdown
 
 APP = str(Path(__file__).resolve().parent.parent / "app.py")
 SECRETS = {
@@ -334,25 +334,10 @@ def test_badge_markdown_whitelists_values():
     rendered = badge_markdown(injected_profile)
     assert "<script>" not in rendered
     assert "Methods not set" in rendered
-    assert SYNTHETIC_LABEL in rendered
+    assert "Synthetic" not in rendered
 
 
-def test_synthetic_badge_renders_only_when_synthetic():
-    def _runner(p):
-        from ui.cards import synthetic_badge
-
-        synthetic_badge(p)
-
-    at_synth = AppTest.from_function(_runner, args=({"is_synthetic": True},)).run()
-    assert not at_synth.exception
-    assert any(SYNTHETIC_LABEL in m.value for m in at_synth.markdown)
-
-    at_real = AppTest.from_function(_runner, args=({"is_synthetic": False},)).run()
-    assert not at_real.exception
-    assert not any(SYNTHETIC_LABEL in m.value for m in at_real.markdown)
-
-
-def test_discover_page_shows_cards_with_synthetic_label():
+def test_discover_page_shows_cards_without_synthetic_label():
     fake = PublicProfilesFake()
     at = _app_at_discover(fake)
     assert not at.exception
@@ -365,9 +350,9 @@ def test_discover_page_shows_cards_with_synthetic_label():
     assert not any("Viewer Researcher" in t for t in all_texts)
     assert not any("Incomplete User" in t for t in all_texts)
 
-    # Synthetic label count matches synthetic profiles count (4)
-    synth_badges = [m.value for m in at.markdown if SYNTHETIC_LABEL in m.value]
-    assert len(synth_badges) == 4
+    # No synthetic label anywhere on the page
+    assert not any("Synthetic" in m.value for m in at.markdown)
+    assert not any("Synthetic" in c.value for c in at.caption)
 
     # No email leaked anywhere
     for t in all_texts:
@@ -456,9 +441,7 @@ def test_researcher_page_displays_profile_safely():
     texts = _all_rendered_text(at)
     assert any("Zoë Müller" in t for t in texts)
     assert any("Cultural anthropologist studying diaspora communities." in t for t in texts)
-    # Synthetic badge appears exactly once in markdown
-    synth_badges = [m.value for m in at.markdown if SYNTHETIC_LABEL in m.value]
-    assert len(synth_badges) == 1
+    assert not any("Synthetic" in m.value for m in at.markdown)
 
     # No email leaked
     for t in texts:
@@ -485,7 +468,7 @@ def test_researcher_page_real_profile_no_synthetic_badge():
     assert not at.exception
     texts = _all_rendered_text(at)
     assert any("Dr. Real Quantitative" in t for t in texts)
-    assert not any(SYNTHETIC_LABEL in m.value for m in at.markdown)
+    assert not any("Synthetic" in m.value for m in at.markdown)
 
 
 def test_researcher_page_invalid_or_missing_id():

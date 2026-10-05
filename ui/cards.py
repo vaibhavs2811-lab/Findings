@@ -13,8 +13,6 @@ import streamlit as st
 
 from findings.core.constants import CAREER_STAGES
 
-SYNTHETIC_LABEL = "Synthetic profile"
-
 METHOD_TITLES = {
     "qualitative": "Qualitative",
     "quantitative": "Quantitative",
@@ -67,17 +65,7 @@ def badge_markdown(profile: dict | None) -> str:
     else:
         badges.append(":gray-badge[Methods not set]")
 
-    # 3. Synthetic profile badge
-    if profile.get("is_synthetic") is True:
-        badges.append(f":orange-badge[:material/smart_toy: {SYNTHETIC_LABEL}]")
-
     return " ".join(badges)
-
-
-def synthetic_badge(profile: dict | None) -> None:
-    """Render a standalone orange badge if profile is synthetic."""
-    if profile and profile.get("is_synthetic") is True:
-        st.badge(SYNTHETIC_LABEL, color="orange", icon=":material/smart_toy:")
 
 
 def render_card(

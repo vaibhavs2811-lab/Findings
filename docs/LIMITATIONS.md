@@ -23,8 +23,9 @@
 
 ## Data
 
-- **Synthetic profiles.** Most of the pool is 80 AI-generated researchers, clearly labelled
-  "Synthetic". They do not correspond to real people. Their example.org emails do not receive mail,
+- **Synthetic profiles.** Most of the pool is 80 AI-generated researchers. They do not correspond to real people.
+  The interface does not mark them as synthetic (they are flagged only in the database), so a
+  viewer cannot tell them from real users unless told. Disclose this in any demo or report. Their example.org emails do not receive mail,
   and requests to them are accepted automatically so the full flow can be demonstrated.
 - The pool is small, so match quality at scale is untested. Rankings on a few thousand real
   profiles would need an approximate-nearest-neighbour index.

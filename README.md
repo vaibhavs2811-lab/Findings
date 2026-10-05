@@ -15,7 +15,7 @@ Live app: https://findings.streamlit.app
 | Sign up / sign in | Sign in page | Email and password. A demo account exists so a demo never depends on an inbox. A browser refresh keeps you signed in. |
 | My profile | My profile | Name, career stage, institution, education, interests, experience, skills, bio, "looking for". The two mentoring toggles default from career stage, and the four give/need fields appear according to the toggles. Gemini suggests a qualitative / quantitative / mixed badge on save; you can override it. |
 | Autofill | My profile (edit mode) | Paste a bio or CV text, or upload a PDF CV (5 MB, 10 pages). Gemini pre-fills the form. Nothing is saved until you click Save. |
-| Discover | Discover | Browse researcher cards, filter by methods and career stage, search interests, Skip a card for the session. Synthetic profiles are labelled. |
+| Discover | Discover | Browse researcher cards, filter by methods and career stage, search interests, Skip a card for the session. Most of the pool is a synthetic (AI-generated) research community; see `docs/DATA.md`. |
 | Researcher profile | From any card or match | Public fields only. No contact email. |
 | My Matches (peers) | My Matches > Peers | pgvector shortlist of 15, then one Gemini rerank with a "why you match" for each. Cached; Refresh has a 60 s cooldown. |
 | Mentorship | My Matches > Mentorship | Find a mentor (if you are seeking one) or find a mentee (if you are open to mentoring). Ranked on two-way give/need fit, with "what you get" and "what they get" on every card. |

@@ -57,7 +57,7 @@ on the demo machine before the demo and paste their output below.
 | 6 | Autofill from pasted text or a PDF CV; nothing saved until Save | AUTO-01..04 | `test_autofill` | `07-autofill.png` |
 | 7 | Discover: cards, filters, search, Skip | DISC-01..05 | `test_discover` | `08-discover.png` |
 | 8 | Public profile page, no email | PROF-07 | `test_discover`, `test_layering` | `09-researcher-page.png` |
-| 9 | Synthetic pool of 80 labelled researchers | DATA-01..03 | `test_seed_data`, `test_seed_load` | `10-synthetic-label.png` |
+| 9 | Seeded pool of 80 researchers (no Synthetic label shown in the UI) | DATA-01, 02 | `test_seed_data`, `test_seed_load`, `test_discover` | `10-discover-pool.png` |
 | 10 | AI peer matches with explanations, cached, with fallback | MATCH-01..05 | `test_matching`, `test_rerank`, `test_matches_cache`, `test_embeddings`, `test_save_embedding` | `11-matches-ai.png`, `12-matches-fallback.png` |
 | 11 | Mentorship: find a mentor / mentee, two-sided explanation | MENT-01..04 | `test_matching` (mentor modes), `test_mentorship` | `13-mentorship.png` |
 | 12 | Connection request, accept/decline, email revealed only after accept | CONN-01..06, DISC-06 | `test_connections_flow`, `test_connections_sql`, `test_discover_connect`, `test_matches_connect` | `14-connections.png` |

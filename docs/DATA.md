@@ -25,8 +25,10 @@ No scraped or third-party personal data is used.
    `scripts/local.toml` on the developer machine.
 4. The generation is a one-off. It is never run from the deployed app.
 
-Every synthetic profile is labelled "Synthetic" wherever it appears (cards, matches, profile page,
-connections). Synthetic people are fictional; their names, institutions and histories are invented.
+The app does not show a "Synthetic" label on these profiles (removed at the project owner's request).
+The pool is fictional: names, institutions and histories are invented, and example.org addresses
+do not receive mail. Say so when demonstrating, and keep `is_synthetic = true` in the database so
+the rows can always be identified.
 
 ## Reproducing the data
 
