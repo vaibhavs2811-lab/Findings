@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import streamlit as st
 
 from findings.core import session
 from findings.core.constants import CAREER_STAGES, METHODS_LABELS
 from findings.repos.profiles import list_public
+from findings.services import connection_service
 from ui.cards import METHOD_TITLES, render_card
 
 st.title("Discover")
@@ -83,6 +86,14 @@ except Exception:
 
 has_filters = bool(selected_methods or selected_stages or (keyword and keyword.strip()))
 
+sb = st.session_state.get("sb")
+conn_states: dict[str, Any] | None = None
+if sb and user_id:
+    try:
+        conn_states = connection_service.connection_states(sb, user_id)
+    except Exception:
+        conn_states = {}
+
 if not profiles:
     if has_filters:
         st.info("No researchers match these filters.")
@@ -93,4 +104,4 @@ else:
     cols = st.columns(3)
     for idx, p in enumerate(profiles):
         with cols[idx % 3]:
-            render_card(p, on_skip=_skip)
+            render_card(p, on_skip=_skip, sb=sb, user_id=user_id, states=conn_states)

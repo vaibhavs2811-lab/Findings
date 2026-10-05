@@ -80,7 +80,14 @@ def synthetic_badge(profile: dict | None) -> None:
         st.badge(SYNTHETIC_LABEL, color="orange", icon=":material/smart_toy:")
 
 
-def render_card(profile: dict[str, Any], *, on_skip: Callable[[str], None] | None = None) -> None:
+def render_card(
+    profile: dict[str, Any],
+    *,
+    on_skip: Callable[[str], None] | None = None,
+    sb: Any = None,
+    user_id: str | None = None,
+    states: dict[str, dict[str, Any]] | None = None,
+) -> None:
     """Render an individual researcher card inside a bordered container."""
     with st.container(border=True):
         st.text(profile.get("full_name") or "Unnamed researcher")
@@ -110,3 +117,16 @@ def render_card(profile: dict[str, Any], *, on_skip: Callable[[str], None] | Non
                     on_click=on_skip,
                     args=(profile["id"],),
                 )
+
+        if sb and user_id and "id" in profile:
+            from ui.connect_button import connect_button
+
+            connect_button(
+                sb,
+                user_id=user_id,
+                profile_id=str(profile["id"]),
+                key=f"card_{profile['id']}",
+                name=profile.get("full_name") or "",
+                is_synthetic=bool(profile.get("is_synthetic")),
+                states=states,
+            )

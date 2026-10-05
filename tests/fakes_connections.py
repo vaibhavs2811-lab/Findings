@@ -220,6 +220,8 @@ class ConnectionsFake(FakeSupabase):
     def __init__(self, user_id: str, store: ConnectionStore | None = None) -> None:
         super().__init__()
         self.user_id = str(user_id)
+        self.auth.user_id = str(user_id)
+        self.auth._store(f"{user_id}@example.org")
         self.store = store if store is not None else ConnectionStore()
         self.rpc_calls: list[str] = []
 

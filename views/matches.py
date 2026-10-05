@@ -8,8 +8,9 @@ from typing import Any
 import streamlit as st
 
 from findings.core.session import current_user
-from findings.services import matching
+from findings.services import connection_service, matching
 from ui.cards import METHOD_TITLES
+from ui.connect_button import connect_button
 
 
 def match_badge_markdown(item: dict[str, Any]) -> str:
@@ -37,8 +38,14 @@ def match_badge_markdown(item: dict[str, Any]) -> str:
     return " ".join(badges)
 
 
-def _render_match(item: dict[str, Any], rank: int) -> None:
-    """Render single match card. Single hook for Phase 5 Connect button."""
+def _render_match(
+    item: dict[str, Any],
+    rank: int,
+    sb: Any = None,
+    user_id: str | None = None,
+    states: dict[str, dict[str, Any]] | None = None,
+) -> None:
+    """Render single match card with View profile and Connect actions."""
     with st.container(border=True):
         name = item.get("full_name") or "Unnamed researcher"
         st.text(f"#{rank}  {name}")
@@ -57,12 +64,25 @@ def _render_match(item: dict[str, Any], rank: int) -> None:
         if why:
             st.text(why)
 
-        st.page_link(
-            "views/researcher.py",
-            label="View profile",
-            icon=":material/person:",
-            query_params={"id": item["id"]},
-        )
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            st.page_link(
+                "views/researcher.py",
+                label="View profile",
+                icon=":material/person:",
+                query_params={"id": item["id"]},
+            )
+        with col2:
+            if sb and user_id and "id" in item:
+                connect_button(
+                    sb,
+                    user_id=user_id,
+                    profile_id=str(item["id"]),
+                    key=f"match_{item['id']}",
+                    name=item.get("full_name") or "",
+                    is_synthetic=bool(item.get("is_synthetic")),
+                    states=states,
+                )
 
 
 def _on_refresh_click() -> None:
@@ -115,12 +135,24 @@ def render_matches_page() -> None:
             help="Recompute matches and bypass cache (60s cooldown)",
         )
 
-    if not result.items:
+    conn_states: dict[str, Any] = {}
+    try:
+        conn_states = connection_service.connection_states(sb, user_id)
+    except Exception:
+        conn_states = {}
+
+    # Filter out anyone who currently has a connection with user (D-12)
+    visible_items = [
+        item for item in result.items
+        if str(item.get("id")) not in conn_states
+    ]
+
+    if not visible_items:
         st.info(matching.NO_MATCHES_NOTICE)
         return
 
-    for idx, item in enumerate(result.items, start=1):
-        _render_match(item, idx)
+    for idx, item in enumerate(visible_items, start=1):
+        _render_match(item, idx, sb=sb, user_id=user_id, states=conn_states)
 
 
 render_matches_page()
