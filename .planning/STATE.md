@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: 1
 current_phase_name: Foundation & Sign-in
-status: executing
+status: verifying
 stopped_at: Roadmap and STATE created; REQUIREMENTS traceability filled in
-last_updated: "2026-10-05T00:53:34.160Z"
+last_updated: "2026-10-05T01:18:26.473Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 1 execution started
-state_head: b6de5f4a19129897093f5a14d3ec79d4c0b425c9
+state_head: c5d9041ef23664781f3a2f6aa979366b5e05a490
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-10-05)
 
 Phase: 1 (Foundation & Sign-in) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-05 — Phase 1 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -73,7 +73,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 1]: Gemini free-tier quotas are unpublished (LOW confidence). Read the real per-model RPM/RPD in AI Studio and record them here before building on Gemini. Development, seeding and the demo all draw from the same per-project bucket.
+- [Phase 1 — RESOLVED 2026-10-05]: Gemini free-tier quotas read in AI Studio (project gen-lang-client-0045339077): gemini-3.5-flash-lite 15 RPM / 250K TPM / 500 RPD; gemini-3.1-flash-lite 15 / 250K / 500; gemini-embedding-2 100 RPM / 30K TPM / 1K RPD; gemini-3.8-flash 5 / 250K / 20. Deployed URL: https://findings.streamlit.app. Keep-alive green: https://github.com/vaibhavs2811-lab/Findings/actions/runs/37250562753
 - [Phase 1]: Python 3.12 must be chosen in Advanced settings on the first Cloud deploy. It can't be changed without redeploying.
 - [Phase 1]: OTP email needs Brevo SMTP, and both Supabase templates need `{{ .Token }}`. Verify with a fresh address from outside the team.
 - [Timeline]: The demo is a hard deadline (~2026-10-19). The critical path to the core value is Phases 1 → 5.
