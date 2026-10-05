@@ -31,6 +31,7 @@ if user:
         st.Page("views/home.py", title="Home", default=True),
         st.Page("views/profile.py", title="My profile"),
         st.Page("views/discover.py", title="Discover", icon=":material/travel_explore:"),
+        st.Page("views/matches.py", title="My Matches", icon=":material/handshake:"),
         st.Page("views/account.py", title="Account"),
         st.Page("views/researcher.py", title="Researcher profile", visibility="hidden"),
     ]

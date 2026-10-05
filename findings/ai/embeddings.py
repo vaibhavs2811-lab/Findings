@@ -17,6 +17,7 @@ from google.genai import types
 from findings.ai.client import AIUnavailable, _resolve_client
 
 EMBEDDING_MODEL = "gemini-embedding-2"
+EMBED_MODEL = EMBEDDING_MODEL
 EMBEDDING_DIM = 768
 TEXT_VERSION = "v1"
 EMBEDDING_PREFIX = "task: sentence similarity | query: "
@@ -101,10 +102,12 @@ def profile_embedding_text(profile: dict[str, Any]) -> str:
     return f"{EMBEDDING_PREFIX}{body}"
 
 
-def profile_hash(text: str) -> str:
+def profile_hash(target: str | dict[str, Any]) -> str:
     """Compute sha256 input hash over embedding model, dimension, version and text."""
+    text = profile_embedding_text(target) if isinstance(target, dict) else str(target)
     payload = f"{EMBEDDING_MODEL}:{EMBEDDING_DIM}:{TEXT_VERSION}:{text}"
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
 
 
 def mock_embedding(text: str) -> list[float]:

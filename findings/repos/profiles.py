@@ -44,6 +44,16 @@ CARD_COLUMNS = (
     "seeking_mentor, open_to_mentoring"
 )
 
+EMBED_META_COLUMNS = "embedding_hash, embedding_model, embedded_at"
+
+
+def get_embedding_meta(sb, user_id: str) -> dict:
+    """Fetch only embedding metadata columns for the specified user."""
+    res = sb.table("profiles").select(EMBED_META_COLUMNS).eq("id", user_id).limit(1).execute()
+    rows = res.data or []
+    return rows[0] if rows else {}
+
+
 PUBLIC_PROFILE_COLUMNS = (
     "id, full_name, career_stage, institution, education, experience, bio, looking_for, "
     "interests, skills, offers, needs, contributable_skills, want_to_learn, "
@@ -117,4 +127,26 @@ def get_public(sb, profile_id: str) -> dict | None:
     )
     rows = res.data or []
     return rows[0] if rows else None
+
+
+def match_profiles(
+    sb,
+    *,
+    query_embedding: list[float] | None = None,
+    match_count: int = 15,
+    exclude_ids: Sequence[str] = (),
+    mode: str = "peer",
+) -> list[dict]:
+    """Call match_profiles RPC to get shortlisted candidate profiles."""
+    params: dict = {
+        "match_count": match_count,
+        "exclude_ids": [str(x) for x in exclude_ids],
+        "mode": mode,
+    }
+    if query_embedding is not None:
+        params["query_embedding"] = query_embedding
+
+    res = sb.rpc("match_profiles", params).execute()
+    return res.data or []
+
 

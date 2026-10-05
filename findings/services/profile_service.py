@@ -198,8 +198,17 @@ def save_profile(sb, user_id: str, form: dict[str, Any]) -> dict[str, Any]:
                 logger.warning("save_profile methods update failed: %s", type(exc).__name__)
                 ai_status = "unavailable"
 
+    embedding_status = "skipped"
+    try:
+        from findings.services import matching
+        embedding_status = matching.ensure_embedding(sb, user_id, saved_row)
+    except Exception as exc:
+        logger.warning("save_profile embedding update failed: %s", type(exc).__name__)
+        embedding_status = "failed"
+
     result = dict(saved_row)
     result["ai_status"] = ai_status
+    result["embedding_status"] = embedding_status
     return result
 
 

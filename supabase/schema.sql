@@ -297,3 +297,86 @@ alter table public.profiles add column if not exists methods_hash text;
 alter table public.profiles add column if not exists methods_reason text check (char_length(methods_reason) <= 300);
 grant update (methods_hash, methods_reason) on public.profiles to authenticated;
 notify pgrst, 'reload schema';
+
+-- 11. Phase 4: AI Peer Matching - pgvector shortlist RPC ----------------------------
+drop function if exists public.match_profiles(extensions.vector, integer, uuid[], text);
+create or replace function public.match_profiles(
+  query_embedding extensions.vector(768) default null,
+  match_count int default 15,
+  exclude_ids uuid[] default '{}',
+  mode text default 'peer'
+)
+returns table (
+  id uuid,
+  full_name text,
+  career_stage text,
+  stage_tier text,
+  methods_effective text,
+  interests text[],
+  skills text[],
+  experience text,
+  bio text,
+  looking_for text,
+  offers text[],
+  needs text[],
+  contributable_skills text[],
+  want_to_learn text[],
+  seeking_mentor boolean,
+  open_to_mentoring boolean,
+  is_synthetic boolean,
+  similarity double precision
+)
+language sql
+stable
+security invoker
+set search_path = public, extensions
+as $$
+  with caller_vec as (
+    select coalesce(
+      match_profiles.query_embedding,
+      (select p.embedding from public.profiles p where p.id = (select auth.uid()))
+    ) as vec
+  )
+  select
+    p.id,
+    p.full_name,
+    p.career_stage,
+    p.stage_tier,
+    p.methods_effective,
+    p.interests,
+    p.skills,
+    p.experience,
+    p.bio,
+    p.looking_for,
+    p.offers,
+    p.needs,
+    p.contributable_skills,
+    p.want_to_learn,
+    p.seeking_mentor,
+    p.open_to_mentoring,
+    p.is_synthetic,
+    (1 - (p.embedding <=> cv.vec)) as similarity
+  from public.profiles p
+  cross join caller_vec cv
+  where match_profiles.mode = 'peer'
+    and cv.vec is not null
+    and p.id <> (select auth.uid())
+    and p.is_complete
+    and p.embedding is not null
+    and not (p.id = any(coalesce(match_profiles.exclude_ids, '{}'::uuid[])))
+    and not exists (
+      select 1
+      from public.connections c
+      where (c.requester_id = (select auth.uid()) and c.recipient_id = p.id)
+         or (c.recipient_id = (select auth.uid()) and c.requester_id = p.id)
+    )
+  order by p.embedding <=> cv.vec asc
+  limit least(greatest(match_profiles.match_count, 1), 50);
+$$;
+
+revoke execute on function public.match_profiles(extensions.vector, integer, uuid[], text) from public, anon;
+grant execute on function public.match_profiles(extensions.vector, integer, uuid[], text) to authenticated;
+
+-- Phase 6 replaces this function in its own appended section with the same signature and columns.
+notify pgrst, 'reload schema';
+
