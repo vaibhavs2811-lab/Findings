@@ -100,7 +100,12 @@ Plans:
 
 **Notes**: The methods label is the app's first Gemini call. This phase sets up the shared, streamlit-free `ai/` client: Pydantic `response_schema`, low thinking level, and Flash-Lite model fallback. Later phases reuse it.
 **Docs capture**: empty profile form, saved profile with methods badge, methods override, mentoring toggles defaulted by stage, RLS rejection evidence
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Tracer + complete My profile form, read-only view and Home CTA (PROF-01..04) [wave 1]
+- [ ] 02-02-PLAN.md — Shared streamlit-free Gemini client, methods classifier, schema section, live smoke script (PROF-05) [wave 1]
+- [ ] 02-03-PLAN.md — [BLOCKING] schema/key/probe setup, hash-gated methods badge + override, live RLS probe (PROF-05, PROF-06) [wave 2]
 **UI hint**: yes
 
 ### Phase 3: Researcher Pool & Discover
