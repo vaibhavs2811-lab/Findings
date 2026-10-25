@@ -22,8 +22,11 @@ if not sb or not user_id:
 
 try:
     convs = chat_service.conversations(sb, user_id)
-except Exception:
-    st.warning("Could not load your conversations. Try again in a moment.")
+except Exception as exc:
+    if "schema cache" in str(exc).lower():
+        st.warning("Messaging is not set up on the database yet. Run the latest supabase/schema.sql in the Supabase SQL Editor.")
+    else:
+        st.warning("Could not load your conversations. Try again in a moment.")
     st.stop()
 
 if not convs:

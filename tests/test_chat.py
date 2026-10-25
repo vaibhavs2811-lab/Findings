@@ -208,3 +208,16 @@ def test_messages_page_rejects_empty_and_reports_errors():
     at.chat_input[0].set_value("hello").run()
     assert any("too fast" in e.value for e in at.error)
     assert store.messages == []
+
+
+def test_messages_page_explains_missing_database_objects():
+    class NoChatTables(ChatFake):
+        def rpc(self, name, params=None):
+            raise RuntimeError("Could not find the function public.my_conversations in the schema cache")
+
+    store = _store()
+    at = _app(NoChatTables(ALICE, store), ALICE, "alice@x.org")
+    at.run()
+    at.switch_page("views/messages.py").run()
+    assert not at.exception
+    assert any("not set up on the database" in w.value for w in at.warning)
