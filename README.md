@@ -20,6 +20,8 @@ Live app: https://findings.streamlit.app
 | My Matches (peers) | My Matches > Peers | pgvector shortlist of 15, then one Gemini rerank with a "why you match" for each. Cached; Refresh has a 60 s cooldown. |
 | Mentorship | My Matches > Mentorship | Find a mentor (if you are seeking one) or find a mentee (if you are open to mentoring). Ranked on two-way give/need fit, with "what you get" and "what they get" on every card. |
 | Connections | Connections | Send a request with a note from a card, match or profile. The recipient accepts or declines. After accept, both people see each other's email. Requests to synthetic profiles are auto-accepted. |
+| Messages | Messages | Chat with people who accepted your request. Plain text, unread counts, read receipts, refreshed every few seconds. Only between real accounts. |
+| Guide | Top bar | A help chatbot that explains how the site works and links to the right page. Uses Gemini, with a built-in FAQ as a fallback. |
 
 If Gemini is unavailable or rate-limited, matching falls back to embedding-similarity ranking with
 a visible notice. The app never crashes on an AI failure.
@@ -83,6 +85,7 @@ docs/               architecture, test report, limitations, AI use, data, runboo
 
 ## Documents
 
+- [Product summary](docs/PRODUCT_SUMMARY.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Test report](docs/TEST_REPORT.md)
 - [Limitations](docs/LIMITATIONS.md)

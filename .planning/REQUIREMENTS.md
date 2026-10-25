@@ -88,6 +88,14 @@ Requirements for the graded demo (~2026-10-19). Each maps to one roadmap phase.
 - [x] **DOCS-05**: AI-use declaration covering the AI inside the product (autofill, methods label, matching), the AI used to build it, and the fact that Google may use free-tier Gemini inputs
 - [x] **DOCS-06**: Source/data documentation, including how the synthetic dataset was generated
 
+### Chat and Guide (added 2026-10-26)
+
+- [x] **CHAT-01**: People with an accepted connection can exchange plain-text messages (max 2000 characters) on a Messages page
+- [x] **CHAT-02**: Chat access is enforced in the database: only the two participants of an accepted connection with a real (non-sample) person can read or write; clients cannot edit or delete; sending is rate limited
+- [x] **CHAT-03**: Conversations show unread counts and read receipts and refresh automatically
+- [x] **GUIDE-01**: A Guide chatbot in the top bar answers how-to questions about the site and links to the right page
+- [x] **GUIDE-02**: The guide falls back to a built-in FAQ if Gemini fails, never sends personal data to the model, and is capped per session
+
 ## v2 Requirements
 
 Deferred. Tracked but not in the current roadmap.
@@ -116,7 +124,7 @@ Deferred. Tracked but not in the current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| In-app chat / messaging | Too much build for <2 weeks; the email unlock on accept replaces it |
+| ~~In-app chat / messaging~~ | Added 2026-10-26 at the user's request (see CHAT-01..03); attachments and moderation remain out of scope |
 | Swipe-gesture card UI | Streamlit can't do gestures well; Connect / Skip buttons carry the idea |
 | Magic-link login | Streamlit can't read the URL-fragment token; replaced by an email code |
 | Email/push notifications for requests | Costs SMTP quota; users check the Connections page |

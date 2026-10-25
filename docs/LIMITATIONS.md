@@ -45,7 +45,8 @@
 
 ## Product scope
 
-- No in-app chat; contact email is revealed after acceptance instead.
+- **Chat is basic.** Plain text only (no attachments, reactions, editing or deleting), refreshed by polling every few seconds rather than pushed instantly, times shown in UTC, and no moderation, reporting or blocking. There is a rate limit of 20 messages a minute. Example profiles in the community cannot chat.
+- **The guide can be wrong.** It answers from a fixed description of the site and falls back to a keyword FAQ when Gemini is unavailable. It cannot act on your account, and each session is capped at 30 questions.
 - No notifications; users check the Connections page.
 - Skips last only for the current session.
 - No admin or moderation tools, and no reporting or blocking of users.

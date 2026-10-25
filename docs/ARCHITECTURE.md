@@ -61,6 +61,7 @@ sequenceDiagram
 | `profiles` | Public profile fields, `embedding vector(768)`, generated `methods_effective` and `stage_tier` | Select if `is_complete` or own row; update only own row, only granted columns |
 | `profile_contacts` | Contact email, kept apart from `profiles` | RLS on, zero policies; readable only via `get_contact_email()` |
 | `connections` | Requests with note and status | Both parties can read; only the recipient can answer; unique per pair |
+| `messages` | Chat messages per accepted connection | Read and insert only by the two participants of an accepted connection with a real person (`can_chat`); clients cannot update or delete; rate limited by trigger; read receipts via `mark_conversation_read` |
 | `match_cache` | Cached ranked results per user and mode | Own rows only |
 | `keepalive` | One row read by the daily GitHub Action | Public read |
 

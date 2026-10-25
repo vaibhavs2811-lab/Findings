@@ -36,7 +36,9 @@ Run this the day before and again 30 minutes before the demo. Tick each box and 
    "what you get / what they get".
 5. Send a connection request to a synthetic profile: it is accepted at once and the example.org
    email appears on Connections.
-6. Sign out.
+6. Messages: open a conversation with a real connection, send a message, and show the unread count on the nav.
+7. Guide: click Guide in the top bar and ask "How do matches work?".
+8. Sign out (account menu, top right).
 
 ## 5. Failure plan
 

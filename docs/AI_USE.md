@@ -9,6 +9,7 @@
 | Peer match rerank | flash-lite chain | The user's profile and up to 15 shortlisted candidates, trimmed to matching fields, with temporary ids `c1..cN` instead of names | A score 0-100 and a "why you match" per candidate |
 | Mentorship rerank | flash-lite chain | The same, plus the offers / needs / contributable skills / want-to-learn lists | A score plus "why", "what you get" and "what they get" |
 | Autofill | flash-lite chain | Text the user pastes or a PDF CV the user uploads | Draft profile fields that pre-fill the form |
+| Guide chatbot | flash-lite chain | The user's question, the last few turns, a fixed description of the site, and non-personal facts (profile complete or not, which items are missing, counts of waiting requests and unread messages). Never names, emails or message contents. | A short answer and up to 3 page links; falls back to a built-in FAQ if Gemini fails |
 | Synthetic data | flash-lite chain | A generation brief (field, stage, methods mix) | 80 invented researcher profiles |
 
 Safeguards: all user text is wrapped in delimiters and marked as data, not instructions; outputs are
