@@ -100,6 +100,13 @@ def connect_button(
             st.caption("Request sent · waiting for their answer")
         elif state == "connected":
             st.caption("Connected · email on your Connections page")
+            if not info.get("is_synthetic") and info.get("connection_id"):
+                st.page_link(
+                    "views/messages.py",
+                    label="Message",
+                    icon=":material/chat:",
+                    query_params={"c": str(info["connection_id"])},
+                )
         elif state == "declined":
             st.caption("Not available")
         elif state == "received":

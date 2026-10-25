@@ -581,4 +581,143 @@ grant execute on function public.match_mentorship(int, uuid[], text) to authenti
 notify pgrst, 'reload schema';
 
 
+-- 12. Chat between connections ---------------------------------------------------------
+-- Only the two people in an accepted connection can read or write a thread, and only when the
+-- other side is a real person (sample profiles cannot chat). Messages are plain text, cannot be
+-- edited or deleted by clients, and are rate limited. Read receipts go through an RPC.
 
+create table if not exists public.messages (
+  id uuid primary key default gen_random_uuid(),
+  connection_id uuid not null references public.connections (id) on delete cascade,
+  sender_id uuid not null references public.profiles (id) on delete cascade,
+  body text not null check (char_length(btrim(body)) between 1 and 2000),
+  created_at timestamptz not null default now(),
+  read_at timestamptz
+);
+create index if not exists messages_conn_created_idx on public.messages (connection_id, created_at);
+create index if not exists messages_sender_created_idx on public.messages (sender_id, created_at desc);
+
+create or replace function public.can_chat(p_connection uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.connections c
+    join public.profiles o
+      on o.id = case when c.requester_id = (select auth.uid()) then c.recipient_id else c.requester_id end
+    where c.id = p_connection
+      and c.status = 'accepted'
+      and (select auth.uid()) in (c.requester_id, c.recipient_id)
+      and not o.is_synthetic
+  );
+$$;
+revoke execute on function public.can_chat(uuid) from public, anon;
+grant execute on function public.can_chat(uuid) to authenticated;
+
+alter table public.messages enable row level security;
+revoke all on public.messages from anon;
+revoke all on public.messages from authenticated;
+grant select on public.messages to authenticated;
+grant insert (connection_id, sender_id, body) on public.messages to authenticated;
+
+drop policy if exists messages_select on public.messages;
+create policy messages_select on public.messages
+  for select to authenticated
+  using (public.can_chat(connection_id));
+
+drop policy if exists messages_insert on public.messages;
+create policy messages_insert on public.messages
+  for insert to authenticated
+  with check (sender_id = (select auth.uid()) and public.can_chat(connection_id));
+
+create or replace function public.messages_guard()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.body := btrim(new.body);
+  new.created_at := now();
+  new.read_at := null;
+  if (
+    select count(*) from public.messages m
+    where m.sender_id = new.sender_id and m.created_at > now() - interval '1 minute'
+  ) >= 20 then
+    raise exception 'You are sending messages too fast. Wait a moment and try again.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists messages_guard on public.messages;
+create trigger messages_guard
+  before insert on public.messages
+  for each row execute function public.messages_guard();
+
+create or replace function public.my_conversations()
+returns table (
+  connection_id uuid,
+  other_id uuid,
+  other_name text,
+  other_stage text,
+  last_body text,
+  last_at timestamptz,
+  last_sender_id uuid,
+  unread_count bigint
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    c.id as connection_id,
+    o.id as other_id,
+    coalesce(nullif(o.full_name, ''), 'Unnamed researcher') as other_name,
+    o.career_stage as other_stage,
+    lm.body as last_body,
+    lm.created_at as last_at,
+    lm.sender_id as last_sender_id,
+    (
+      select count(*) from public.messages m
+      where m.connection_id = c.id and m.sender_id <> (select auth.uid()) and m.read_at is null
+    ) as unread_count
+  from public.connections c
+  join public.profiles o
+    on o.id = case when c.requester_id = (select auth.uid()) then c.recipient_id else c.requester_id end
+  left join lateral (
+    select m.body, m.created_at, m.sender_id
+    from public.messages m
+    where m.connection_id = c.id
+    order by m.created_at desc
+    limit 1
+  ) lm on true
+  where c.status = 'accepted'
+    and (select auth.uid()) in (c.requester_id, c.recipient_id)
+    and not o.is_synthetic
+  order by coalesce(lm.created_at, c.responded_at, c.created_at) desc;
+$$;
+revoke execute on function public.my_conversations() from public, anon;
+grant execute on function public.my_conversations() to authenticated;
+
+create or replace function public.mark_conversation_read(p_connection uuid)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  update public.messages
+  set read_at = now()
+  where connection_id = p_connection
+    and sender_id <> (select auth.uid())
+    and read_at is null
+    and public.can_chat(p_connection);
+$$;
+revoke execute on function public.mark_conversation_read(uuid) from public, anon;
+grant execute on function public.mark_conversation_read(uuid) to authenticated;
+
+notify pgrst, 'reload schema';

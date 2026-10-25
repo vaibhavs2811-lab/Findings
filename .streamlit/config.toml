@@ -1,13 +1,21 @@
 [theme]
-base = "dark"
-primaryColor = "#7C5CFF"
-backgroundColor = "#0A0D18"
-secondaryBackgroundColor = "#11162A"
-textColor = "#E8ECFA"
-linkColor = "#22D3EE"
-borderColor = "#252C4A"
-baseRadius = "0.9rem"
 font = "sans serif"
+baseRadius = "0.75rem"
+linkColor = "#0071E3"
+
+[theme.light]
+primaryColor = "#0071E3"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F5F7"
+textColor = "#1D1D1F"
+borderColor = "#D2D2D7"
+
+[theme.dark]
+primaryColor = "#2997FF"
+backgroundColor = "#000000"
+secondaryBackgroundColor = "#1C1C1E"
+textColor = "#F5F5F7"
+borderColor = "#38383A"
 
 [client]
 toolbarMode = "minimal"

@@ -150,6 +150,13 @@ def render_connections_page() -> None:
 
                 with st.container(border=True, key=f"fxcard-conn-ok-{item.get('connection_id')}"):
                     _person_header(other_name, other_stage, pill_html("Connected", "green"))
+                    if not item.get("other_is_synthetic") and item.get("connection_id"):
+                        st.page_link(
+                            "views/messages.py",
+                            label="Message",
+                            icon=":material/chat:",
+                            query_params={"c": str(item["connection_id"])},
+                        )
                     if other_email:
                         st.html(f'<div class="fx-email">{icon_svg("mail", 18)} Contact email unlocked</div>')
                         st.code(other_email, language="")

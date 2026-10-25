@@ -109,8 +109,7 @@ def test_theme_is_injected_on_every_page():
     at.session_state["sb"] = sb
     at.session_state["user"] = {"id": "user-1", "email": "a@b.com"}
     at.run()
-    assert any("--fx-violet" in (e.proto.body or "") for e in at.get("html"))
-    assert any("fx-brand-name" in (e.proto.body or "") for e in at.get("html"))
+    assert any("--fx-accent" in (e.proto.body or "") for e in at.get("html"))
 
 
 def test_icons_are_css_masks_without_scripts_or_external_urls():

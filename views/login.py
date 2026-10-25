@@ -3,20 +3,17 @@ import streamlit as st
 from findings.core import session
 from findings.services import auth_service
 from findings.services.auth_service import AuthFailure
-from ui.components import brand_html
 from ui.icons import icon_svg
 
-# The sidebar adds nothing before sign-in; give the page the full width.
-st.html("<style>[data-testid='stSidebar'],[data-testid='stSidebarCollapsedControl'],[data-testid='stExpandSidebarButton']{display:none}</style>")
+# One page before sign-in: hide the nav links so the page stays clean.
+st.html("<style>[data-testid='stTopNavLinkContainer']{display:none}</style>")
 
 sb = st.session_state["sb"]
 
 left, right = st.columns([1.15, 1], gap="large", vertical_alignment="center")
 with left:
     st.html(
-        brand_html()
-        + '<div style="height:1.4rem"></div>'
-        + '<span class="fx-eyebrow">Hinge for researchers</span>'
+        '<span class="fx-eyebrow">Hinge for researchers</span>'
         + '<div class="fx-display">Find the people you would '
         + '<span class="fx-gradient-text">actually want to work with</span>.</div>'
         + '<div class="fx-lead">Findings matches researchers on topics, methods and goals, '
@@ -38,7 +35,7 @@ with right, st.container(key="fxpanel-signin"):
         with st.form("signin_form"):
             email = st.text_input("Email", key="signin_email")
             password = st.text_input("Password", type="password", key="signin_password")
-            submitted = st.form_submit_button("Sign in")
+            submitted = st.form_submit_button("Sign in", type="primary")
         if submitted:
             try:
                 user_id, user_email = auth_service.sign_in(sb, email, password)
@@ -55,7 +52,7 @@ with right, st.container(key="fxpanel-signin"):
                 "Password (at least 6 characters)", type="password", key="signup_password"
             )
             confirm = st.text_input("Confirm password", type="password", key="signup_confirm")
-            created = st.form_submit_button("Create account")
+            created = st.form_submit_button("Create account", type="primary")
         if created:
             try:
                 user_id, user_email = auth_service.sign_up(sb, new_email, new_password, confirm)

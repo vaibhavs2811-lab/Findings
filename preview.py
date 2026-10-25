@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import runpy
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -96,6 +97,7 @@ class _Query:
         self.fake, self.name = fake, name
         self.filters: list = []
         self.orders: list[str] = []
+        self.desc = False
         self.max = None
         self.mode = "select"
         self.payload = None
@@ -111,8 +113,9 @@ class _Query:
         self.filters.append(lambda r: r.get(col) in vals)
         return self
 
-    def order(self, col, **_k):
+    def order(self, col, desc=False, **_k):
         self.orders.append(col)
+        self.desc = desc
         return self
 
     def limit(self, n):
@@ -133,6 +136,10 @@ class _Query:
 
     def execute(self):
         table = self.fake.tables.setdefault(self.name, [])
+        if self.mode == "insert" and self.name == "messages":
+            row = dict(self.payload, id=f"msg-{len(table) + 1}", created_at=datetime.now(timezone.utc).isoformat(), read_at=None)
+            table.append(row)
+            return _Result(data=[row])
         if self.mode == "insert":
             row = dict(self.payload, id=f"conn-{len(table) + 1}")
             table.append(row)
@@ -146,7 +153,7 @@ class _Query:
                 r.update(self.payload)
             return _Result(data=[dict(r) for r in rows])
         for col in reversed(self.orders):
-            rows.sort(key=lambda r: str(r.get(col)))
+            rows.sort(key=lambda r: str(r.get(col)), reverse=self.desc)
         if self.max:
             rows = rows[: self.max]
         return _Result(data=[dict(r) for r in rows])
@@ -171,6 +178,13 @@ class _Rpc:
             return _Result(data=f.connections())
         elif self.name == "get_contact_email":
             return _Result(data=None)
+        elif self.name == "my_conversations":
+            return _Result(data=f.conversations())
+        elif self.name == "mark_conversation_read":
+            for m in f.tables["messages"]:
+                if m["sender_id"] != ME_ID:
+                    m["read_at"] = m["read_at"] or "2026-10-06T10:00:00+00:00"
+            return _Result(data=None)
         mine = _tokens(me)
         scored = []
         for r in pool:
@@ -191,7 +205,7 @@ class _Auth:
 
 class PreviewSupabase:
     def __init__(self):
-        self.tables = {"profiles": _build_rows(), "connections": [], "match_cache": []}
+        self.tables = {"profiles": _build_rows(), "connections": [], "match_cache": [], "messages": []}
         self.auth = _Auth()
         by_name = {r["full_name"]: r for r in self.tables["profiles"]}
         self.seeded = []
@@ -200,6 +214,34 @@ class PreviewSupabase:
         self.seeded.append(("received", "pending", names[3], "Loved your work on community housing, want to compare notes?"))
         self.seeded.append(("sent", "accepted", names[10], "Would love to collaborate on a mixed-methods study."))
         self.seeded.append(("sent", "pending", names[20], "Hi! Your methods training sounds like a great fit."))
+        self._seed_messages()
+
+    def conversations(self):
+        other = next(r for r in self.tables["profiles"] if r["full_name"] == self.seeded[1][2])
+        msgs = self.tables["messages"]
+        last = msgs[-1] if msgs else None
+        return [{
+            "connection_id": "seed-1", "other_id": other["id"], "other_name": other["full_name"],
+            "other_stage": other["career_stage"], "last_body": last["body"] if last else None,
+            "last_at": last["created_at"] if last else None, "last_sender_id": last["sender_id"] if last else None,
+            "unread_count": sum(1 for m in msgs if m["sender_id"] != ME_ID and not m["read_at"]),
+        }]
+
+    def _seed_messages(self):
+        other = next(r for r in self.tables["profiles"] if r["full_name"] == self.seeded[1][2])
+        base = datetime(2026, 10, 5, 14, 0, tzinfo=timezone.utc)
+        thread = [
+            (other["id"], "Hi Jordan, thanks for accepting! I read your housing paper.", 0),
+            (ME_ID, "Thanks for connecting. Your survey design work is exactly what we are missing.", 4),
+            (other["id"], "Happy to help. Could we find 30 minutes this week to talk through the sampling? I am free Thursday.", 9),
+            (ME_ID, "Thursday works. I will send an invite.", 12),
+        ]
+        for i, (sender, body, minutes) in enumerate(thread, 1):
+            self.tables["messages"].append({
+                "id": f"msg-{i}", "connection_id": "seed-1", "sender_id": sender, "body": body,
+                "created_at": (base + timedelta(minutes=minutes)).isoformat(),
+                "read_at": "2026-10-05T14:30:00+00:00" if sender == ME_ID else None,
+            })
 
     def connections(self):
         by_name = {r["full_name"]: r for r in self.tables["profiles"]}

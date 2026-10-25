@@ -17,14 +17,14 @@ from ui.icons import icon_css, icon_svg
 _CSS_PATH = Path(__file__).with_name("theme.css")
 
 _AVATAR_GRADIENTS = (
-    ("#7c5cff", "#22d3ee"),
-    ("#ff4d9d", "#ffb84d"),
-    ("#22d3ee", "#34d399"),
-    ("#ffb84d", "#ff7849"),
-    ("#9b7bff", "#ff4d9d"),
-    ("#34d399", "#7c5cff"),
-    ("#fb7185", "#9b7bff"),
-    ("#38bdf8", "#7c5cff"),
+    ("#64d2ff", "#0a84ff"),
+    ("#ffb340", "#ff9500"),
+    ("#4cd964", "#2fb344"),
+    ("#cf7bf5", "#a050d0"),
+    ("#ff6482", "#e0254d"),
+    ("#7d7aff", "#5856d6"),
+    ("#ffd60a", "#ffb000"),
+    ("#98989d", "#6c6c70"),
 )
 
 TONES = {"violet", "cyan", "green", "amber", "pink", "gray"}

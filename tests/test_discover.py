@@ -357,8 +357,9 @@ def test_discover_page_shows_cards_without_synthetic_label():
     assert not any("Synthetic" in c.value for c in at.caption)
 
     # No email leaked anywhere
+    # (the signed-in viewer's own email appears in the account menu; nobody else's may)
     for t in all_texts:
-        assert "@" not in t or "@example.org" not in t
+        assert "@" not in t or "@example.org" not in t or t == "viewer@example.org"
 
 
 def test_discover_filters_and_keyword_combination():
@@ -453,7 +454,7 @@ def test_researcher_page_displays_profile_safely():
     tables = [val for op, val in fake.log if op == "table"]
     assert all(tbl == "profiles" for tbl in tables)
     rpcs = [val[0] for op, val in fake.log if op == "rpc"]
-    assert all(fn == "my_connections" for fn in rpcs)
+    assert all(fn in ("my_connections", "my_conversations") for fn in rpcs)
 
 
 def test_researcher_page_real_profile_no_synthetic_badge():

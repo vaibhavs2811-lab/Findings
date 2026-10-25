@@ -182,7 +182,7 @@ def test_sign_out_clears_browser_cookie(browser):
     at = _app(sb, None)
     at.session_state["user"] = {"id": "user-1", "email": "me@b.com"}
     at.run()
-    next(b for b in at.sidebar.button if b.label == "Sign out").click()
+    next(b for b in at.button if b.label == "Sign out").click()
     at.run()
     assert not at.exception
     assert browser.calls[-1] == (None, True)

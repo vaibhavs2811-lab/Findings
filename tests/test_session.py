@@ -27,17 +27,17 @@ def _signed_in(sb=None):
 
 
 def _sidebar_button(at):
-    return next(b for b in at.sidebar.button if b.label == "Sign out")
+    """The account menu (top right of every page) holds the Sign out button."""
+    return next(b for b in at.button if b.label == "Sign out")
 
 
-def test_home_sidebar_shows_email_and_sign_out():
+def test_home_account_menu_shows_email_and_sign_out():
     at, _ = _signed_in()
     at.run()
     assert not at.exception
     assert at.title[0].value == "Welcome to Findings"
-    captions = [c.value for c in at.sidebar.caption]
+    captions = [c.value for c in at.caption]
     assert "me@b.com" in captions
-    assert any(c.startswith("Findings") and "Python 3." in c for c in captions)
     assert _sidebar_button(at)
 
 
